@@ -14,8 +14,8 @@ class Grid():
     def __init__(self, GRID_SIZE: int) -> None:
         self.GRID_SIZE: int = GRID_SIZE
         self.grid: np.ndarray = np.zeros((GRID_SIZE, GRID_SIZE))
-        self.shipPos: Set[Tuple[int, int]] = []
-        self.shotSquares: Set[Tuple[int, int]] = []
+        self.shipPos: Set[Tuple[int, int]] = set()
+        self.shotSquares: Set[Tuple[int, int]] = set()
 
     def add_ship(self, ship: Ship, pos: Tuple[int, int]) -> None:
         '''
@@ -26,7 +26,7 @@ class Grid():
         :returns: None.
         :raises IndexError: When the ship is placed out of the grid, raise error.
         '''
-        def place_ship_segment(xPos, yPos):
+        def place_ship_segment(xPos, yPos) -> None:
             '''Helper function to save the ship positions of squares
             
             :param xPos: The x position of square.
@@ -36,22 +36,9 @@ class Grid():
             curPos = (xPos, yPos)
             ship.pos.append(curPos)
             self.grid[xPos][yPos] = 1
-            self.shipPos.append(curPos)
+            self.shipPos.add(curPos)
     
-        if not ship.isRotated:  # Horizontal ship
-            for i in range(ship.size):
-                try:
-                    xPos = pos[0]
-                    yPos = pos[1] + i
-                    if yPos >= self.GRID_SIZE:
-                        raise IndexError(f"Out of bound, moved from {pos} to.")
-                    place_ship_segment(xPos, yPos)
-                except IndexError as e:
-                    yPos = self.GRID_SIZE - 1 - i
-                    print(e, (xPos, yPos))
-                    place_ship_segment(xPos, yPos)
-    
-        else:  # Vertical ship
+        if ship.isRotated:  # Vertical ship
             for i in range(ship.size):
                 try:
                     xPos = pos[0] + i
@@ -63,6 +50,20 @@ class Grid():
                     xPos = self.GRID_SIZE - 1 - i
                     print(e, (xPos, yPos))
                     place_ship_segment(xPos, yPos)
+    
+        else:  # Horizontal ship
+            for i in range(ship.size):
+                try:
+                    xPos = pos[0]
+                    yPos = pos[1] + i
+                    if yPos >= self.GRID_SIZE:
+                        raise IndexError(f"Out of bound, moved from {pos} to.")
+                    place_ship_segment(xPos, yPos)
+                except IndexError as e:
+                    yPos = self.GRID_SIZE - 1 - i
+                    print(e, (xPos, yPos))
+                    place_ship_segment(xPos, yPos)
+
 
     def shoot(self, attackPos: Tuple[int, int]) -> int:
         '''Return True if hit, else return False
