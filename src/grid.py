@@ -5,7 +5,7 @@ Created on Thu Aug 29 14:22:07 2024
 @author: ACER
 """
 import numpy as np
-from typing import List, Tuple
+from typing import List, Tuple, Set
 from ship import Ship
 
 
@@ -14,8 +14,8 @@ class Grid():
     def __init__(self, GRID_SIZE: int) -> None:
         self.GRID_SIZE: int = GRID_SIZE
         self.grid: np.ndarray = np.zeros((GRID_SIZE, GRID_SIZE))
-        self.shipPos: List[Tuple[int, int]] = []
-        self.shotSquares: List[Tuple[int, int]] = []
+        self.shipPos: Set[Tuple[int, int]] = []
+        self.shotSquares: Set[Tuple[int, int]] = []
 
     def add_ship(self, ship: Ship, pos: Tuple[int, int]) -> None:
         '''
@@ -64,18 +64,25 @@ class Grid():
                     print(e, (xPos, yPos))
                     place_ship_segment(xPos, yPos)
 
-                
-    def shot(self, pos: Tuple[int, int]) -> int:
+    def shoot(self, attackPos: Tuple[int, int]) -> int:
         '''Return True if hit, else return False
         
         :param pos: The position to attack.
-        :returns: 1 if hit, 0 if missed, -1 if invalid attack.
+        :returns: 1 if hit, 0 if miss, -1 if invalid attack.
         :raise IndexError: If player attack outside of grid.
         '''
         try:
-            if pos[0] < 0 or pos[1] < 0 or pos[0] >= self.GRID_SIZE or pos[1] >= self.GRID_SIZE:
+            if attackPos[0] < 0 or attackPos[1] < 0 or attackPos[0] >= self.GRID_SIZE or attackPos[1] >= self.GRID_SIZE:
                 raise IndexError("Attack out of range.")
+            self.shotSquares.add(attackPos)
+            xPos = attackPos[0]
+            yPos = attackPos[1]
+            self.grid[xPos][yPos] = -1
+            if attackPos in self.shipPos:
+                self.shipPos.remove(attackPos)
+                return 1 # Hit
+            return 0 # Miss
         except IndexError as e:
             print(e)
-            return -1
-        
+            return -1 # Invalid
+
