@@ -9,16 +9,32 @@ from grid import Grid
 from ship import Ship
 import os
 import numpy as np
+import random 
 
 GRID_SIZE = 10
 
 g = Grid(GRID_SIZE)
 
-s1 = Ship(3, True)
-s2 = Ship(2, False)
+# s1 = Ship(3, True)
+# s2 = Ship(2, False)
 
-g.add_ship(s1, (4, 5))
-g.add_ship(s2, (0, 9))
+# g.add_ship(s1, (4, 5))
+# g.add_ship(s2, (0, 9))
+
+shipCount = 3
+for ship in range(shipCount):
+    shipSize = random.randint(1, 9)
+    shipXPos = random.randint(0, 9)
+    shipYPos = random.randint(0, 9)
+    shipRotate = random.randint(0, 1)
+    newShip = Ship(shipSize, shipRotate)
+    if g.add_ship(newShip, (shipXPos, shipYPos)):
+        print(f"Placed ship size {shipSize} at ({shipXPos}, {shipYPos}) {"vertically" if shipRotate else "horizontally"}")
+    else:
+        print(f"Failed to place ship size {shipSize} at ({shipXPos}, {shipYPos}) {"vertically" if shipRotate else "horizontally"}")
+        break
+print(g.grid)
+print(g.shipPos)
 
 curGrid = np.zeros((GRID_SIZE, GRID_SIZE), )
 while True:
