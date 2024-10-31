@@ -1,5 +1,5 @@
 import numpy as np
-from typing import List, Tuple, Set, Dict
+from typing import List, Tuple, Set, Dict, Optional
 from enum import Enum
 import random
 import os
@@ -90,8 +90,8 @@ class BattleshipAI:
     def __init__(self, board_size: int = 10):
         self.board_size = board_size
         self.probability_map = np.ones((board_size, board_size))
-        self.hits: Set[Tuple[int, int]] = set()
-        self.misses: Set[Tuple[int, int]] = set()
+        self.hits = set()
+        self.misses = set()
         self.ships = {
             'Carrier': 5,
             'Battleship': 4,
@@ -100,10 +100,194 @@ class BattleshipAI:
             'Destroyer': 2
         }
         self.remaining_ships = self.ships.copy()
-        self.hunt_stack: List[Tuple[int, int]] = []
-        self.confirmed_ship_cells: Set[Tuple[int, int]] = set()
-        self.hunting_direction: Direction = None
-        self.parity = True  # Sử dụng chiến lược parity
+        self.hunt_stack = []
+        self.last_hits = []
+        self.confirmed_ship_cells = set()
+        self.unconfirmed_hits = set()  # New: track hits that aren't part of a sunk ship
+        self.sunk_ship_positions = set()  # New: track positions of sunk ships
+        self.min_remaining_ship_size = min(self.ships.values())  # New: track smallest remaining ship
+        self.max_remaining_ship_size = max(self.ships.values())  # New: track largest remaining ship
+
+    def is_late_game(self) -> bool:
+        """Check if we're in late game (less than 3 ships remaining)"""
+        return len(self.remaining_ships) <= 2
+
+    def calculate_ship_density(self, x: int, y: int) -> float:
+        """Calculate how many different ways ships can be placed over this cell"""
+        density = 0
+        for ship_length in self.remaining_ships.values():
+            # Check horizontal placement
+            for start_y in range(max(0, y - ship_length + 1), min(y + 1, self.board_size - ship_length + 1)):
+                positions = [(x, start_y + i) for i in range(ship_length)]
+                if self.is_valid_ship_placement(positions):
+                    density += 1
+
+            # Check vertical placement
+            for start_x in range(max(0, x - ship_length + 1), min(x + 1, self.board_size - ship_length + 1)):
+                positions = [(start_x + i, y) for i in range(ship_length)]
+                if self.is_valid_ship_placement(positions):
+                    density += 1
+                    
+        return density
+
+    def is_valid_ship_placement(self, positions: List[Tuple[int, int]]) -> bool:
+        """Check if a ship placement is valid given current game state"""
+        for x, y in positions:
+            # Check if position is within bounds
+            if not (0 <= x < self.board_size and 0 <= y < self.board_size):
+                return False
+            
+            # Check if position overlaps with misses or sunk ships
+            if (x, y) in self.misses or (x, y) in self.sunk_ship_positions:
+                return False
+            
+            # Check if position is adjacent to a sunk ship
+            for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
+                adj_x, adj_y = x + dx, y + dy
+                if (adj_x, adj_y) in self.sunk_ship_positions:
+                    return False
+
+        # Check if placement is consistent with unconfirmed hits
+        hits_in_placement = sum(1 for pos in positions if pos in self.unconfirmed_hits)
+        return hits_in_placement == len(set(positions) & self.unconfirmed_hits)
+
+    def update_late_game_probabilities(self):
+        """Update probability map with late game specific strategies"""
+        # Reset probability map
+        self.probability_map = np.zeros((self.board_size, self.board_size))
+        
+        # Calculate base probabilities using ship density
+        for i in range(self.board_size):
+            for j in range(self.board_size):
+                if (i, j) not in self.hits and (i, j) not in self.misses:
+                    self.probability_map[i, j] = self.calculate_ship_density(i, j)
+
+        # Adjust probabilities based on unconfirmed hits
+        if self.unconfirmed_hits:
+            for hit_x, hit_y in self.unconfirmed_hits:
+                # Increase probabilities in line with unconfirmed hits
+                for ship_length in self.remaining_ships.values():
+                    # Check horizontal
+                    for y in range(max(0, hit_y - ship_length + 1), min(hit_y + ship_length, self.board_size)):
+                        if (hit_x, y) not in self.hits and (hit_x, y) not in self.misses:
+                            self.probability_map[hit_x, y] *= 2
+
+                    # Check vertical
+                    for x in range(max(0, hit_x - ship_length + 1), min(hit_x + ship_length, self.board_size)):
+                        if (x, hit_y) not in self.hits and (x, hit_y) not in self.misses:
+                            self.probability_map[x, hit_y] *= 2
+
+        # Consider minimum remaining ship size
+        invalid_positions = set()
+        for i in range(self.board_size):
+            for j in range(self.board_size):
+                if (i, j) not in self.hits and (i, j) not in self.misses:
+                    # Check if any remaining ship can fit here
+                    can_fit_ship = False
+                    for ship_length in self.remaining_ships.values():
+                        # Check horizontal fit
+                        horizontal_space = self.get_available_space(i, j, True)
+                        # Check vertical fit
+                        vertical_space = self.get_available_space(i, j, False)
+                        if horizontal_space >= ship_length or vertical_space >= ship_length:
+                            can_fit_ship = True
+                            break
+                    
+                    if not can_fit_ship:
+                        invalid_positions.add((i, j))
+                        self.probability_map[i, j] = 0
+
+    def get_available_space(self, x: int, y: int, horizontal: bool) -> int:
+        """Calculate available space in a direction from a position"""
+        space = 0
+        if horizontal:
+            for dy in range(self.board_size - y):
+                if (x, y + dy) in self.misses or (x, y + dy) in self.sunk_ship_positions:
+                    break
+                space += 1
+        else:
+            for dx in range(self.board_size - x):
+                if (x + dx, y) in self.misses or (x + dx, y) in self.sunk_ship_positions:
+                    break
+                space += 1
+        return space
+
+    def update_game_state(self, x: int, y: int, is_hit: bool, hit_ship: Optional[Ship] = None):
+        """Update game state with enhanced tracking"""
+        if is_hit:
+            self.hits.add((x, y))
+            self.unconfirmed_hits.add((x, y))
+            self.last_hits.append((x, y))
+            
+            # If a ship was sunk
+            if hit_ship and hit_ship.is_sunk():
+                # Remove ship from remaining ships
+                for ship_name, length in list(self.remaining_ships.items()):
+                    if length == len(hit_ship.positions):
+                        del self.remaining_ships[ship_name]
+                        break
+                
+                # Update ship position tracking
+                self.sunk_ship_positions.update(hit_ship.positions)
+                self.unconfirmed_hits -= set(hit_ship.positions)
+                
+                # Update min/max remaining ship sizes
+                if self.remaining_ships:
+                    self.min_remaining_ship_size = min(self.remaining_ships.values())
+                    self.max_remaining_ship_size = max(self.remaining_ships.values())
+                
+                # Reset hunting mode
+                self.hunt_stack = []
+                self.last_hits = []
+            else:
+                # Add adjacent cells to hunt stack if not already targeted
+                for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
+                    new_x, new_y = x + dx, y + dy
+                    if (0 <= new_x < self.board_size and 
+                        0 <= new_y < self.board_size and 
+                        (new_x, new_y) not in self.hits and 
+                        (new_x, new_y) not in self.misses):
+                        self.hunt_stack.append((new_x, new_y))
+        else:
+            self.misses.add((x, y))
+
+    def get_next_target(self) -> Tuple[int, int]:
+        """Get next target with improved late game strategy"""
+        def is_valid_target(x: int, y: int) -> bool:
+            return (0 <= x < self.board_size and 
+                    0 <= y < self.board_size and 
+                    (x, y) not in self.hits and 
+                    (x, y) not in self.misses)
+
+        # Process hunt stack first
+        while self.hunt_stack:
+            next_target = self.hunt_stack.pop()
+            if is_valid_target(*next_target):
+                return next_target
+
+        # Use late game strategy if applicable
+        if self.is_late_game():
+            self.update_late_game_probabilities()
+        else:
+            self.update_probability_map()
+
+        # Get valid candidates with highest probability
+        max_prob = np.max(self.probability_map)
+        if max_prob > 0:
+            candidates = [(i, j) for i, j in zip(*np.where(self.probability_map == max_prob))
+                         if is_valid_target(i, j)]
+            if candidates:
+                return random.choice(candidates)
+
+        # Fallback: get any remaining valid target
+        valid_targets = [(i, j) for i in range(self.board_size) 
+                        for j in range(self.board_size) 
+                        if is_valid_target(i, j)]
+        
+        if valid_targets:
+            return random.choice(valid_targets)
+        
+        raise ValueError("No valid targets remaining")
         
     def _get_parity_cells(self) -> List[Tuple[int, int]]:
         """Trả về các ô theo mẫu bàn cờ"""
@@ -245,75 +429,6 @@ class BattleshipAI:
         
         return len(connected_hits)
 
-    def get_next_target(self) -> Tuple[int, int]:
-        """Chọn ô tiếp theo để bắn dựa trên chiến lược tối ưu"""
-        # Nếu đang trong chế độ săn tàu
-        if self.hunt_stack:
-            return self.hunt_stack.pop()
-            
-        # Cập nhật bản đồ xác suất
-        self.update_probability_map()
-        
-        # Sử dụng chiến lược parity khi chưa có hit
-        if not self.hits:
-            parity_cells = self._get_parity_cells()
-            if parity_cells:
-                # Chọn ô có xác suất cao nhất trong các ô parity
-                max_prob = 0
-                best_cell = parity_cells[0]
-                for cell in parity_cells:
-                    if self.probability_map[cell[0]][cell[1]] > max_prob:
-                        max_prob = self.probability_map[cell[0]][cell[1]]
-                        best_cell = cell
-                return best_cell
-        
-        # Chọn ô có xác suất cao nhất
-        max_prob = np.max(self.probability_map)
-        if max_prob > 0:
-            candidates = list(zip(*np.where(self.probability_map == max_prob)))
-            return random.choice(candidates)
-        
-        # Nếu không tìm thấy ô nào, chọn ngẫu nhiên từ các ô còn lại
-        empty_cells = [
-            (i, j) for i in range(self.board_size)
-            for j in range(self.board_size)
-            if (i, j) not in self.hits and (i, j) not in self.misses
-        ]
-        return random.choice(empty_cells) if empty_cells else (0, 0)
-
-    def update_game_state(self, x: int, y: int, is_hit: bool):
-        """Cập nhật trạng thái game sau mỗi lượt bắn"""
-        if is_hit:
-            self.hits.add((x, y))
-            
-            # Kiểm tra xem có tàu nào bị đánh chìm không
-            ship_length = self._find_ship_length(x, y)
-            for ship_name, length in list(self.remaining_ships.items()):
-                if length == ship_length:
-                    del self.remaining_ships[ship_name]
-                    # Đánh dấu các ô đã xác nhận có tàu
-                    for hit_x, hit_y in self.hits:
-                        if self._find_ship_length(hit_x, hit_y) == ship_length:
-                            self.confirmed_ship_cells.add((hit_x, hit_y))
-                    break
-            
-            # Thêm các ô xung quanh vào hunt_stack
-            adjacent_cells = self._get_adjacent_cells(x, y)
-            self.hunt_stack.extend(adjacent_cells)
-        else:
-            self.misses.add((x, y))
-            if (x, y) in self.hunt_stack:
-                self.hunt_stack.remove((x, y))
-            
-            # Đổi hướng tìm kiếm nếu miss
-            if self.hunting_direction:
-                self.hunting_direction = None
-                self.hunt_stack = []
-
-        # Đổi parity nếu không còn ô phù hợp
-        if not self._get_parity_cells():
-            self.parity = not self.parity
-
     def play_game(self) -> List[Tuple[int, int, bool]]:
         """Mô phỏng một ván game hoàn chỉnh"""
         moves = []
@@ -325,14 +440,13 @@ class BattleshipAI:
             if len(self.hits) >= sum(self.ships.values()):
                 break
         return moves
+    
     def play_complete_game(self) -> List[Tuple[int, int, bool]]:
         """Chơi một ván game hoàn chỉnh và ghi log"""
         game = BattleshipGame()
         moves = []
         
-        # Ghi ra file moves.txt
         with open("moves.txt", "w", encoding="utf-8") as f:
-            # In bảng ban đầu
             f.write("Initial board:\n")
             f.write(game.get_board_display(show_ships=True))
             f.write("\nShips placement:\n")
@@ -348,23 +462,31 @@ class BattleshipAI:
                 x, y = self.get_next_target()
                 is_hit = game.check_hit(x, y)
                 
+                # Find the hit ship if it's a hit
+                hit_ship = None
                 if is_hit:
-                    game.update_ship_hits(x, y)
+                    for ship in game.ships:
+                        if (x, y) in ship.positions:
+                            ship.hits.add((x, y))
+                            hit_ship = ship
+                            break
                 
-                self.update_game_state(x, y, is_hit)
+                # Update AI's game state with the hit ship information
+                self.update_game_state(x, y, is_hit, hit_ship)  # Pass hit_ship to update_game_state
                 moves.append((x, y, is_hit))
                 
-                # Ghi thông tin về nước đi
+                # Log move information
                 f.write(f"{move_count:4d}  ({x},{y})    {'Hit' if is_hit else 'Miss'}    ")
+                f.write(f"Is late game: {self.is_late_game()} {self.remaining_ships}")
                 
-                # Tạo bảng hiện tại
+                # Create current board state
                 current_board = np.full((self.board_size, self.board_size), '-')
                 for hit_x, hit_y in self.hits:
                     current_board[hit_x][hit_y] = 'H'
                 for miss_x, miss_y in self.misses:
                     current_board[miss_x][miss_y] = 'M'
                 
-                # In bảng sau mỗi nước đi
+                # Print board state
                 f.write("\n")
                 f.write("   " + " ".join(str(i) for i in range(self.board_size)) + "\n")
                 for i in range(self.board_size):
@@ -374,18 +496,17 @@ class BattleshipAI:
                     f.write("\n")
                 f.write("-" * 50 + "\n")
                 
-                # Kiểm tra xem đã bắn trúng hết tàu chưa
+                # Check if all ships are sunk
                 if all(ship.is_sunk() for ship in game.ships):
                     break
             
-            # Thống kê cuối game
+            # Game summary
             f.write("\nGame Summary:\n")
             f.write(f"Total moves: {move_count}\n")
             f.write(f"Total hits: {len(self.hits)}\n")
             f.write(f"Total misses: {len(self.misses)}\n")
             f.write(f"Hit ratio: {len(self.hits)/move_count:.2%}\n")
             
-            # In trạng thái cuối cùng của các tàu
             f.write("\nFinal ship status:\n")
             for ship in game.ships:
                 f.write(f"{ship.name}: {'SUNK' if ship.is_sunk() else 'FLOATING'}\n")
@@ -393,7 +514,6 @@ class BattleshipAI:
                 f.write(f"Hits: {ship.hits}\n")
         
         return moves
-
 
 
 def runBatch(batchNum):
