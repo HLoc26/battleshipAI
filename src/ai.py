@@ -62,7 +62,7 @@ class BattleshipAI:
                         0 <= new_y < self.board_size and 
                         (new_x, new_y) not in self.hits and 
                         (new_x, new_y) not in self.misses):
-                        self.hunt_stack.append((new_x, new_y))
+                        self.hunt_stack.insert(0, (new_x, new_y))
         else:
             self.misses.add((x, y))
 
