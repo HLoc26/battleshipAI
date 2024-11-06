@@ -207,14 +207,14 @@ class BattleshipGUI:
             if self.player_game.board[px][py] != ' ':
                 return []
             
-            # Check adjacent cells
-            for dx in [-1, 0, 1]:
-                for dy in [-1, 0, 1]:
-                    nx, ny = px + dx, py + dy
-                    if (0 <= nx < 10 and 0 <= ny < 10 and 
-                            self.player_game.board[nx][ny] != ' ' and 
-                            (nx, ny) not in positions):
-                        return []
+            # # Check adjacent cells
+            # for dx in [-1, 0, 1]:
+            #     for dy in [-1, 0, 1]:
+            #         nx, ny = px + dx, py + dy
+            #         if (0 <= nx < 10 and 0 <= ny < 10 and 
+            #                 self.player_game.board[nx][ny] != ' ' and 
+            #                 (nx, ny) not in positions):
+            #             return []
         
         return positions
     
