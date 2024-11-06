@@ -65,7 +65,7 @@ class BattleshipAI:
                         self.hunt_stack.insert(0, (new_x, new_y))
         else:
             self.misses.add((x, y))
-
+        
     def get_next_target(self) -> Tuple[int, int]:
         """Get next target with improved late game strategy"""
         def is_valid_target(x: int, y: int) -> bool:
@@ -103,16 +103,6 @@ class BattleshipAI:
             return random.choice(valid_targets)
         
         raise ValueError("No valid targets remaining")
-        
-    def get_parity_cells(self) -> List[Tuple[int, int]]:
-        """Trả về các ô theo mẫu bàn cờ"""
-        cells = []
-        for i in range(self.board_size):
-            for j in range(self.board_size):
-                if (i + j) % 2 == (1 if self.parity else 0):
-                    if (i, j) not in self.hits and (i, j) not in self.misses:
-                        cells.append((i, j))
-        return cells
     
     def can_fit_smallest_ship(self, x: int, y: int) -> bool:
         """Kiểm tra xem ô có thể chứa tàu nhỏ nhất không"""
@@ -210,42 +200,6 @@ class BattleshipAI:
         if total > 0:
             self.probability_map /= total
 
-    def get_adjacent_cells(self, x: int, y: int) -> List[Tuple[int, int]]:
-        """Trả về các ô liền kề hợp lệ"""
-        adjacent = []
-        if self.hunting_direction:
-            dx, dy = self.hunting_direction.value
-            next_x, next_y = x + dx, y + dy
-            if (0 <= next_x < self.board_size and 
-                0 <= next_y < self.board_size and 
-                (next_x, next_y) not in self.hits and 
-                (next_x, next_y) not in self.misses):
-                adjacent.append((next_x, next_y))
-        else:
-            for direction in Direction:
-                dx, dy = direction.value
-                next_x, next_y = x + dx, y + dy
-                if (0 <= next_x < self.board_size and 
-                    0 <= next_y < self.board_size and 
-                    (next_x, next_y) not in self.hits and 
-                    (next_x, next_y) not in self.misses):
-                    adjacent.append((next_x, next_y))
-        return adjacent
-
-    def find_ship_length(self, x: int, y: int) -> int:
-        """Tìm độ dài của tàu đã bị bắn trúng"""
-        connected_hits = {(x, y)}
-        stack = [(x, y)]
-        
-        while stack:
-            current_x, current_y = stack.pop()
-            for next_x, next_y in self.get_adjacent_cells(current_x, current_y):
-                if (next_x, next_y) in self.hits and (next_x, next_y) not in connected_hits:
-                    connected_hits.add((next_x, next_y))
-                    stack.append((next_x, next_y))
-        
-        return len(connected_hits)
-
 
     def is_late_game(self) -> bool:
         """Kiểm tra xem có phải là cuối game rồi hay không (số tàu còn lại dưới 3)
@@ -334,10 +288,10 @@ class BattleshipAI:
                 return False
             
             # Kiểm tra xem (x, y) có nằm gần tàu bị chìm hay không
-            for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
-                adj_x, adj_y = x + dx, y + dy
-                if (adj_x, adj_y) in self.sunk_ship_positions:
-                    return False
+            # for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
+            #     adj_x, adj_y = x + dx, y + dy
+            #     if (adj_x, adj_y) in self.sunk_ship_positions:
+            #         return False
 
         # Đếm số lượng các ô đã hit nhưng chưa chìm
         hits_in_placement = sum(1 for pos in positions if pos in self.unconfirmed_hits)
