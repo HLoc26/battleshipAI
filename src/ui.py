@@ -6,39 +6,186 @@ from typing import List, Tuple, Optional
 from game import BattleshipGame
 from ship import Ship
 from ai import BattleshipAI
+import tkinter as tk
+from tkinter import ttk
+from PIL import Image, ImageTk
+
+SHIP_PREVIEW_COLOR = "#e0c1e6"
+SHIP_PLACED_COLOR = "#c58ad0"
+ATTACK_MISSED = "#b0b0b0"
+ATTACK_HIT = "#ff5733"
+class HomePage:
+    def __init__(self, master):
+        self.master = master
+        self.master.title("Battleship")
+        
+        # Set window to fullscreen
+        self.master.attributes('-fullscreen', True)
+        
+        # Create main frame
+        self.frame = tk.Frame(master)
+        self.frame.pack(expand=True)
+        
+        # Game title
+        title_label = tk.Label(self.frame, 
+                             text="BATTLESHIP", 
+                             font=('Arial', 48, 'bold'))
+        title_label.pack(pady=50)
+        
+        # Authors
+        authors_text = "22110052 - Dang Huu Loc\n22110065 - Nguyen Nhat Quang\n22110067 - Nguyen Quang Sang"
+        authors_label = tk.Label(self.frame, 
+                               text=authors_text,
+                               font=('Arial', 14))
+        authors_label.pack(pady=30)
+        
+        # Start button
+        start_button = ttk.Button(self.frame,
+                                text="Start Game",
+                                command=self.show_tutorial,
+                                style='Large.TButton',
+                                cursor="hand2")
+        start_button.pack(pady=40)
+        
+        # Configure button style
+        style = ttk.Style()
+        style.theme_use('alt')
+        style.configure('Large.TButton', 
+                       font=('Arial', 16), 
+                       padding=10,
+                       background="",
+                       foreground="white")
+        style.map("Large.TButton", background=[('!active', '#8782BC'), ("pressed", "#A5A1CD"), ("active", "#afaad2")])
+        # Exit button
+        exit_button = ttk.Button(self.frame,
+                               text="Exit",
+                               command=self.master.quit, cursor="hand2")
+        exit_button.pack(pady=20)
+
+    def show_tutorial(self):
+        self.frame.destroy()
+        TutorialPage(self.master)
+
+class TutorialPage:
+    def __init__(self, master):
+        self.master = master
+        
+        # Create main frame
+        self.frame = tk.Frame(master)
+        self.frame.pack(expand=True, fill='both')
+        
+        # Load and display tutorial image
+        image = Image.open("tutorial.png")
+        # Resize image to fit screen
+        screen_width = self.master.winfo_screenwidth()
+        screen_height = self.master.winfo_screenheight()
+        image = image.resize((screen_width, screen_height - 100))  # Leave space for button
+        
+        self.photo = ImageTk.PhotoImage(image)
+        image_label = tk.Label(self.frame, image=self.photo)
+        image_label.pack(expand=True, fill='both')
+        
+        # Start button
+        start_button = ttk.Button(self.frame,
+                                text="Start",
+                                command=self.start_game,
+                                style='Large.TButton', cursor="hand2")
+        start_button.pack(pady=20)
+
+    def start_game(self):
+        self.frame.destroy()
+        BattleshipGUI(self.master)
 
 class BattleshipGUI:
     def __init__(self, master):
+
+        self.restart_img = ImageTk.PhotoImage(Image.open("restart.png").resize((60, 50)))
+        
+
         self.master = master
         self.master.title("Battleship Game")
-        
         # Initialize variables
         self.setup_new_game()
+
+        # Cấu hình grid trong `master` để game_frame chiếm toàn bộ
+        master.grid_rowconfigure(0, weight=1)
+        master.grid_columnconfigure(0, weight=1)
         
         # Create main game frame
-        self.game_frame = tk.Frame(master)
-        self.game_frame.pack(padx=20, pady=20)
-        
-        # Create control frame
-        self.control_frame = tk.Frame(master)
-        self.control_frame.pack(pady=10)
-        
-        # Create board frames
-        self.create_board_frames()
-        
+        self.game_frame = tk.Frame(master, bg="lightblue")
+        self.game_frame.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
+
+        # Cấu hình grid trong `game_frame` thành layout 4x8
+        frame_width = self.game_frame.winfo_width()
+        frame_height = self.game_frame.winfo_height()
+        for i in range(6):
+            self.game_frame.grid_rowconfigure(i, weight=1, minsize=frame_height//4)
+        for j in range(8):
+            self.game_frame.grid_columnconfigure(j, weight=1, minsize=frame_width//8)
+        # self.show_grid_layout(self.game_frame, 6, 8)
+
+        # "Your Board" frame
+        self.player_frame = tk.LabelFrame(self.game_frame, text="Your Board", padx=10, pady=10, font=('Arial', 15))
+        self.player_frame.grid(row=0, column=0, rowspan=3, columnspan=3, sticky="nsew", padx=10, pady=10)
+
+        # "AI's Board" frame
+        self.ai_frame = tk.LabelFrame(self.game_frame, text="AI's Board", padx=10, pady=10, font=('Arial', 15))
+        self.ai_frame.grid(row=0, column=3, rowspan=3, columnspan=3, sticky="nsew", padx=10, pady=10)
+
+        # Instructions
+        self.instructions_frame = tk.LabelFrame(self.game_frame, text="Instructions", padx=10, pady=10, font=('Arial', 15))
+        self.instructions_frame.grid(row=0, column=6, columnspan=2, rowspan=3, sticky="nsew", padx=10, pady=10)
+
+        # "Your Ships" frame
+        self.player_ships_frame = tk.LabelFrame(self.game_frame, text="Your Ships", padx=10, pady=5, font=('Arial', 15))
+        self.player_ships_frame.grid(row=3, column=0,columnspan=1, sticky="nsew", padx=10, pady=10)
+
+        # Control frame
+        self.control_frame = tk.Frame(self.game_frame, padx=10, pady=10)
+        self.control_frame.grid(row=3, column=1, columnspan=4, sticky="nsew", padx=10, pady=10)
+
+        # "AI Ships" frame
+        self.ai_ships_frame = tk.LabelFrame(self.game_frame, text="AI Ships", padx=10, pady=5, font=('Arial', 15))
+        self.ai_ships_frame.grid(row=3, column=5, sticky="nsew", padx=10, pady=10)
+
         # Create status label
-        self.status_label = tk.Label(master, text="Place your ships!", font=('Arial', 12))
-        self.status_label.pack(pady=10)
-        
+        self.status_label = tk.Label(self.control_frame, text="Place your ships!", font=('Arial', 15))
+        self.status_label.pack(pady=(10, 20))
+
         # Create ship status frames
         self.create_ship_status_frames()
-        
+
+        # Create board frames
+        self.create_board_frames()
+
         # Create control buttons
         self.create_control_buttons()
-        
+
         # Start ship placement phase
         self.start_ship_placement()
+
+        self.show_probability = tk.BooleanVar(value=False)
     
+        # Tạo checkbox
+        self.prob_checkbox = tk.Checkbutton(
+            self.control_frame,
+            text="Show AI Probability",
+            variable=self.show_probability,
+            command=self.toggle_probability_display
+        )
+        # self.prob_checkbox.pack(side=tk.LEFT, padx=5, anchor='s')
+    def show_grid_layout(self, frame, rows, columns):
+        for r in range(rows):
+            for c in range(columns):
+                # Tạo ô giả lập
+                tk.Label(
+                    frame,
+                    text=f"R{r}\nC{c}",
+                    borderwidth=1,
+                    relief="solid",
+                    bg="lightgray"
+                ).grid(row=r, column=c, sticky="nsew")
+
     def setup_new_game(self):
         """Initialize all game variables for a new game"""
         self.player_game = BattleshipGame()
@@ -67,14 +214,6 @@ class BattleshipGUI:
         self.placement_preview = set()  # Store cells being previewed
     
     def create_board_frames(self):
-        # Player's board frame
-        self.player_frame = tk.LabelFrame(self.game_frame, text="Your Board", padx=10, pady=10)
-        self.player_frame.grid(row=0, column=0, padx=20)
-        
-        # AI's board frame
-        self.ai_frame = tk.LabelFrame(self.game_frame, text="AI's Board", padx=10, pady=10)
-        self.ai_frame.grid(row=0, column=1, padx=20)
-        
         # Create board buttons
         self.player_buttons = []
         self.ai_buttons = []
@@ -84,7 +223,7 @@ class BattleshipGUI:
             ai_row = []
             for j in range(10):
                 # Player's board buttons - increased width for probability numbers
-                p_btn = tk.Button(self.player_frame, width=5, height=1)
+                p_btn = tk.Button(self.player_frame, width=8, height=3, cursor='hand2')
                 p_btn.grid(row=i+1, column=j+1)
                 p_btn.bind('<Enter>', lambda e, x=i, y=j: self.preview_ship_placement(x, y))
                 p_btn.bind('<Leave>', lambda e: self.clear_ship_preview())
@@ -93,7 +232,7 @@ class BattleshipGUI:
                 player_row.append(p_btn)
                 
                 # AI's board buttons
-                ai_btn = tk.Button(self.ai_frame, width=4, height=1)
+                ai_btn = tk.Button(self.ai_frame, width=8, height=3)
                 ai_btn.grid(row=i+1, column=j+1)
                 ai_btn.configure(state='disabled')  # Disabled during setup
                 ai_row.append(ai_btn)
@@ -111,14 +250,7 @@ class BattleshipGUI:
             tk.Label(self.player_frame, text=str(i)).grid(row=0, column=i+1)
             tk.Label(self.ai_frame, text=str(i)).grid(row=0, column=i+1)
     
-    def create_ship_status_frames(self):
-        # Create frames for ship status
-        self.player_ships_frame = tk.LabelFrame(self.master, text="Your Ships", padx=10, pady=5)
-        self.player_ships_frame.pack(side=tk.LEFT, padx=20)
-        
-        self.ai_ships_frame = tk.LabelFrame(self.master, text="AI Ships", padx=10, pady=5)
-        self.ai_ships_frame.pack(side=tk.RIGHT, padx=20)
-        
+    def create_ship_status_frames(self): 
         # Add ship status labels
         self.player_ship_labels = {}
         self.ai_ship_labels = {}
@@ -129,20 +261,49 @@ class BattleshipGUI:
                            fg="orange")
             label.pack(anchor="w")
             self.player_ship_labels[ship_name] = label
+
+        # Initialize AI ships display
+        for ship in self.ai_game.ships:
+            label = tk.Label(self.ai_ships_frame, 
+                           text=f"{ship.name} ({ship.length}): Waiting", 
+                           fg="red")
+            label.pack(anchor="w")
+            self.ai_ship_labels[ship.name] = label
     
     def create_control_buttons(self):
+        # Create a new frame for buttons
+        self.buttons_frame = tk.Frame(self.control_frame)
+        self.buttons_frame.pack()
+        
         # Create restart button (initially disabled)
-        self.restart_button = tk.Button(self.control_frame, 
-                                      text="Restart Game", 
-                                      command=self.restart_game,
-                                      state='disabled')
+        self.restart_button = tk.Button(self.buttons_frame,
+                                    image=self.restart_img, 
+                                    command=self.restart_game,
+                                    state='disabled')
         self.restart_button.pack(side=tk.LEFT, padx=5)
         
         # Create reset placement button
-        self.reset_placement_button = tk.Button(self.control_frame, 
-                                              text="Reset Placement", 
-                                              command=self.reset_placement)
+        self.reset_placement_button = tk.Button(self.buttons_frame,
+                                            text="Reset Placement", 
+                                            command=self.reset_placement)
         self.reset_placement_button.pack(side=tk.LEFT, padx=5)
+        
+        # Create instructions label
+        self.instructions_label = tk.Label(
+            self.instructions_frame, 
+            text=
+                "Ship Placement:\n"
+                "• Left-click to place ships\n"
+                "• Right-click to rotate ship orientation\n"
+                "• Use 'Reset Placement' to start over\n\n"
+                "Gameplay:\n"
+                "• Left-click on AI's board to attack\n"
+                "• Try to sink all AI ships before AI sinks yours!",
+            justify=tk.LEFT,
+            font=('Arial', 15),
+            wraplength=200
+        )
+        self.instructions_label.pack(padx=10)
     
     def start_ship_placement(self):
         """Start the ship placement phase"""
@@ -181,7 +342,7 @@ class BattleshipGUI:
         # Show preview
         self.placement_preview = set(positions)
         for px, py in positions:
-            self.player_buttons[px][py].configure(bg="lightgray")
+            self.player_buttons[px][py].configure(bg=SHIP_PREVIEW_COLOR)
     
     def clear_ship_preview(self):
         """Clear the ship placement preview"""
@@ -236,7 +397,7 @@ class BattleshipGUI:
         
         for px, py in positions:
             self.player_game.board[px][py] = ship_name[0]
-            self.player_buttons[px][py].configure(bg="gray")
+            self.player_buttons[px][py].configure(bg=SHIP_PLACED_COLOR)
         
         # Update ship status
         self.player_ship_labels[ship_name].configure(
@@ -261,11 +422,32 @@ class BattleshipGUI:
                      "Right-click to rotate"
             )
     
+    def handle_ai_board_btn_enter(self, x, y):
+        bg = self.ai_buttons[x][y].cget('bg')
+        if bg == 'SystemButtonFace':
+            self.ai_buttons[x][y].configure(bg='gray')
+
+    def handle_ai_board_btn_leave(self, x, y):
+        # Check if this position was hit on any ship
+        is_hit = False
+        for ship in self.ai_game.ships:
+            if (x, y) in ship.hits:
+                self.ai_buttons[x][y].configure(bg=ATTACK_HIT)
+                is_hit = True
+                break
+        
+        # If it's not a hit but the background isn't default, it must be a miss
+        if not is_hit:
+            bg = self.ai_buttons[x][y].cget('bg')
+            if bg != 'SystemButtonFace' and bg != 'gray':
+                self.ai_buttons[x][y].configure(bg=ATTACK_MISSED)
+            else:
+                self.ai_buttons[x][y].configure(bg='SystemButtonFace')
+                    
     def finish_setup(self):
         """Finish the setup phase and start the game"""
         self.setup_phase = False
         self.is_player_turn = True
-        
         # Enable AI board for attacks
         for i in range(10):
             for j in range(10):
@@ -273,7 +455,11 @@ class BattleshipGUI:
                 self.ai_buttons[i][j].configure(
                     command=lambda x=i, y=j: self.handle_player_move(x, y)
                 )
-        
+                self.ai_buttons[i][j].configure(cursor="cross")
+                self.ai_buttons[i][j].bind('<Enter>', lambda e, x=i, y=j: self.handle_ai_board_btn_enter(x, y))
+                self.ai_buttons[i][j].bind('<Leave>', lambda e, x=i, y=j: self.handle_ai_board_btn_leave(x, y))
+        for widget in self.ai_ships_frame.winfo_children():
+            widget.destroy()        
         # Initialize AI ships display
         for ship in self.ai_game.ships:
             label = tk.Label(self.ai_ships_frame, 
@@ -285,6 +471,9 @@ class BattleshipGUI:
         # Update status
         self.status_label.configure(text="Your turn! Click on AI's board to attack")
         self.reset_placement_button.configure(state='disabled')
+        # Enable restart button when game starts
+        self.restart_button.configure(state='normal')
+        self.prob_checkbox.pack(pady=10)
     
     def reset_placement(self):
         """Reset the ship placement phase"""
@@ -310,9 +499,17 @@ class BattleshipGUI:
     
     def restart_game(self):
         """Restart the entire game"""
-        # Clear AI ships frame
-        for widget in self.ai_ships_frame.winfo_children():
-            widget.destroy()
+        # If game is in progress (not over), show confirmation dialog
+        if not self.game_over and not self.setup_phase:
+            if not messagebox.askyesno("Confirm Restart", "Are you sure you want to restart the game?"):
+                return        
+        # Reset AI ships frame
+        for ship in self.ai_game.ships:
+            label = tk.Label(self.ai_ships_frame, 
+                           text=f"{ship.name} ({ship.length}): Waiting", 
+                           fg="red")
+            label.pack(anchor="w")
+            self.ai_ship_labels[ship.name] = label
         
         # Reset game state
         self.setup_new_game()
@@ -341,7 +538,8 @@ class BattleshipGUI:
         
         # Disable restart button
         self.restart_button.configure(state='disabled')
-        
+        self.show_probability.set(False)
+        self.prob_checkbox.pack_forget()
         # Start placement phase
         self.start_ship_placement()
     
@@ -358,7 +556,7 @@ class BattleshipGUI:
         self.ai_buttons[x][y]['state'] = 'disabled'
         
         if is_hit:
-            self.ai_buttons[x][y].configure(bg="red")
+            self.ai_buttons[x][y].configure(bg=ATTACK_HIT)
             # Find hit ship and update status
             for ship in self.ai_game.ships:
                 if (x, y) in ship.positions:
@@ -369,7 +567,7 @@ class BattleshipGUI:
                             fg="red"
                         )
         else:
-            self.ai_buttons[x][y].configure(bg="blue")
+            self.ai_buttons[x][y].configure(bg=ATTACK_MISSED)
         
         # Check for game over
         if all(ship.is_sunk() for ship in self.ai_game.ships):
@@ -386,15 +584,29 @@ class BattleshipGUI:
         
         self.master.after(1000, self.handle_ai_move)
     
+    def toggle_probability_display(self):
+        """Toggle probability display on/off"""
+        if self.show_probability.get():
+            self.update_probability_heatmap()
+        else:
+            # Clear all probability numbers
+            for i in range(10):
+                for j in range(10):
+                    if self.player_buttons[i][j]['bg'] not in [ATTACK_HIT, ATTACK_MISSED]:
+                        self.player_buttons[i][j].configure(text="")
+
     def update_probability_heatmap(self):
         """Update the player's board visualization with AI's probability numbers"""
+        # Nếu checkbox không được chọn, không hiển thị số
+        if not self.show_probability.get():
+            return
 
         print(self.ai.probability_map)
         print("=======================")
         for i in range(10):
             for j in range(10):
                 # Skip cells that have been hit
-                if self.player_buttons[i][j]['bg'] in ['red', 'blue']:
+                if self.player_buttons[i][j]['bg'] in [ATTACK_HIT, ATTACK_MISSED]:
                     continue
                     
                 # Get probability and format it
@@ -403,7 +615,10 @@ class BattleshipGUI:
                     text = ""  # Empty text for zero probability 
                 else:
                     # Format to 2 decimal places
-                    text = f"{prob * 100:.2f}"
+                    if prob < 100:
+                        text = f"{prob * 100:.2f}"
+                    else:
+                        text = f"{prob:.2f}"
                 
                 # Update button text
                 self.player_buttons[i][j].configure(text=text)
@@ -435,7 +650,7 @@ class BattleshipGUI:
         
         # Update visual representation
         self.player_buttons[x][y].configure(
-            bg="red" if is_hit else "blue"
+            bg=ATTACK_HIT if is_hit else ATTACK_MISSED
         )
         
         # Check for game over
@@ -447,10 +662,11 @@ class BattleshipGUI:
         # Switch turns
         self.is_player_turn = True
         self.status_label.configure(text="Your turn! Click on AI's board to attack")
-
+    
+# Modify the main function
 def main():
     root = tk.Tk()
-    app = BattleshipGUI(root)
+    HomePage(root)
     root.mainloop()
 
 if __name__ == "__main__":

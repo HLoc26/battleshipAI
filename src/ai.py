@@ -28,7 +28,7 @@ class BattleshipAI:
         self.max_remaining_ship_size = max(self.ships.values()) 
 
     def update_game_state(self, x: int, y: int, is_hit: bool, hit_ship: Optional[Ship] = None):
-        """Update game state with enhanced tracking"""
+        """Update game state with enhanced tracking and directional targeting"""
         if is_hit:
             self.hits.add((x, y))
             self.unconfirmed_hits.add((x, y))
@@ -36,35 +36,90 @@ class BattleshipAI:
             
             # If a ship was sunk
             if hit_ship and hit_ship.is_sunk():
-                # Remove ship from remaining ships
+                # Reset hunting mode
+                self.hunt_stack = []
+                self.last_hits = []
+
                 for ship_name, length in list(self.remaining_ships.items()):
                     if length == len(hit_ship.positions):
                         del self.remaining_ships[ship_name]
                         break
                 
-                # Update ship position tracking
                 self.sunk_ship_positions.update(hit_ship.positions)
                 self.unconfirmed_hits -= set(hit_ship.positions)
                 
-                # Update min/max remaining ship sizes
                 if self.remaining_ships:
                     self.min_remaining_ship_size = min(self.remaining_ships.values())
                     self.max_remaining_ship_size = max(self.remaining_ships.values())
-                
-                # Reset hunting mode
-                self.hunt_stack = []
-                self.last_hits = []
+                if self.is_late_game():
+                    self.update_late_game_probabilities()
+                else:
+                    self.update_probability_map()
             else:
-                # Add adjacent cells to hunt stack if not already targeted
-                for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
-                    new_x, new_y = x + dx, y + dy
-                    if (0 <= new_x < self.board_size and 
-                        0 <= new_y < self.board_size and 
-                        (new_x, new_y) not in self.hits and 
-                        (new_x, new_y) not in self.misses):
-                        self.hunt_stack.insert(0, (new_x, new_y))
+                # Determine ship direction if we have multiple hits
+                if len(self.last_hits) >= 2:
+                    ship_direction = self.determine_ship_direction()
+                    self.update_hunt_stack_directional(x, y, ship_direction)
+                else:
+                    # If this is the first hit, check all adjacent cells
+                    for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
+                        new_x, new_y = x + dx, y + dy
+                        if (0 <= new_x < self.board_size and 
+                            0 <= new_y < self.board_size and 
+                            (new_x, new_y) not in self.hits and 
+                            (new_x, new_y) not in self.misses):
+                            self.hunt_stack.insert(0, (new_x, new_y))
         else:
             self.misses.add((x, y))
+
+    def determine_ship_direction(self) -> Optional[Direction]:
+        """Determine the direction of the ship based on last hits"""
+        if len(self.last_hits) < 2:
+            return None
+            
+        # Get the last two hits
+        x1, y1 = self.last_hits[-1]
+        x2, y2 = self.last_hits[-2]
+        
+        # Check if hits are in a line
+        if x1 == x2:  # Same row - horizontal ship
+            return Direction.HORIZONTAL
+        elif y1 == y2:  # Same column - vertical ship
+            return Direction.VERTICAL
+        
+        return None
+
+    def update_hunt_stack_directional(self, x: int, y: int, direction: Direction):
+        """Update hunt stack based on determined ship direction"""
+        if direction == Direction.HORIZONTAL:
+            # Add cells to the left and right of the hit
+            for dy in [-1, 1]:
+                new_y = y + dy
+                if (0 <= x < self.board_size and 
+                    0 <= new_y < self.board_size and 
+                    (x, new_y) not in self.hits and 
+                    (x, new_y) not in self.misses):
+                    # Insert the cell in the direction of confirmed hits at the start
+                    # of the stack for priority targeting
+                    if any((x, y + dy * i) in self.hits for i in range(1, self.max_remaining_ship_size)):
+                        self.hunt_stack.insert(0, (x, new_y))
+                    else:
+                        self.hunt_stack.append((x, new_y))
+                    
+        elif direction == Direction.VERTICAL:
+            # Add cells above and below the hit
+            for dx in [-1, 1]:
+                new_x = x + dx
+                if (0 <= new_x < self.board_size and 
+                    0 <= y < self.board_size and 
+                    (new_x, y) not in self.hits and 
+                    (new_x, y) not in self.misses):
+                    # Insert the cell in the direction of confirmed hits at the start
+                    # of the stack for priority targeting
+                    if any((x + dx * i, y) in self.hits for i in range(1, self.max_remaining_ship_size)):
+                        self.hunt_stack.insert(0, (new_x, y))
+                    else:
+                        self.hunt_stack.append((new_x, y))
         
     def get_next_target(self) -> Tuple[int, int]:
         """Get next target with improved late game strategy"""
