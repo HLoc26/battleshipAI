@@ -318,13 +318,15 @@ class BattleshipGUI:
                 self.player_buttons[i][j]['state'] = 'normal'
                 self.ai_buttons[i][j]['state'] = 'disabled'
     
-    def toggle_ship_orientation(self):
+    def toggle_ship_orientation(self, x: int, y: int):
         """Toggle ship orientation between horizontal and vertical"""
         self.is_horizontal = not self.is_horizontal
         self.status_label.configure(
             text=f"Placing {self.ships_to_place[self.current_ship_index][0]} "
                  f"({'Horizontal' if self.is_horizontal else 'Vertical'})"
         )
+        self.clear_ship_preview()
+        self.preview_ship_placement(x, y)
     
     def preview_ship_placement(self, x: int, y: int):
         """Preview ship placement when hovering over cells"""
