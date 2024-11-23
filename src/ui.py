@@ -315,7 +315,7 @@ class BattleshipGUI:
             text=
                 "Ship Placement:\n"
                 "• Left-click to place ships\n"
-                "• Right-click to rotate ship orientation\n"
+                "•  \n"
                 "• Use 'Reset Placement' to start over\n\n"
                 "Gameplay:\n"
                 "• Left-click on AI's board to attack\n"
