@@ -504,6 +504,8 @@ class BattleshipGUI:
             if not messagebox.askyesno("Confirm Restart", "Are you sure you want to restart the game?"):
                 return        
         # Reset AI ships frame
+        for widget in self.ai_ships_frame.winfo_children():
+            widget.destroy()
         for ship in self.ai_game.ships:
             label = tk.Label(self.ai_ships_frame, 
                            text=f"{ship.name} ({ship.length}): Waiting", 
