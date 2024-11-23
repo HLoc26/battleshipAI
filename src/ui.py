@@ -173,7 +173,9 @@ class BattleshipGUI:
             variable=self.show_probability,
             command=self.toggle_probability_display
         )
-        # self.prob_checkbox.pack(side=tk.LEFT, padx=5, anchor='s')
+        # Bind the resize event
+        self.root.bind('<Configure>', self.resize_buttons)
+
     def show_grid_layout(self, frame, rows, columns):
         for r in range(rows):
             for c in range(columns):
@@ -228,7 +230,7 @@ class BattleshipGUI:
                 p_btn.bind('<Enter>', lambda e, x=i, y=j: self.preview_ship_placement(x, y))
                 p_btn.bind('<Leave>', lambda e: self.clear_ship_preview())
                 p_btn.bind('<Button-1>', lambda e, x=i, y=j: self.place_ship(x, y))
-                p_btn.bind('<Button-3>', lambda e: self.toggle_ship_orientation())
+                p_btn.bind('<Button-3>', lambda e, x=i, y=j: self.toggle_ship_orientation(x, y))
                 player_row.append(p_btn)
                 
                 # AI's board buttons
@@ -239,7 +241,12 @@ class BattleshipGUI:
             
             self.player_buttons.append(player_row)
             self.ai_buttons.append(ai_row)
-        
+        # Make grid cells expand with the window size
+        for i in range(10):
+            self.player_frame.grid_rowconfigure(i + 1, weight=1)
+            self.player_frame.grid_columnconfigure(i + 1, weight=1)
+            self.ai_frame.grid_rowconfigure(i + 1, weight=1)
+            self.ai_frame.grid_columnconfigure(i + 1, weight=1)
         # Add row/column labels
         for i in range(10):
             # Row labels
@@ -249,7 +256,21 @@ class BattleshipGUI:
             # Column labels
             tk.Label(self.player_frame, text=str(i)).grid(row=0, column=i+1)
             tk.Label(self.ai_frame, text=str(i)).grid(row=0, column=i+1)
-    
+    def resize_buttons(self, event):
+        # Calculate new dimensions based on window size
+        new_width = max(5, event.width // 20)
+        new_height = max(2, event.height // 40)
+
+        # Update all player buttons
+        for row in self.player_buttons:
+            for button in row:
+                button.config(width=new_width, height=new_height)
+
+        # Update all AI buttons
+        for row in self.ai_buttons:
+            for button in row:
+                button.config(width=new_width, height=new_height)
+                
     def create_ship_status_frames(self): 
         # Add ship status labels
         self.player_ship_labels = {}
