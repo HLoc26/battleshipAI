@@ -3,6 +3,7 @@ from tkinter import messagebox
 import random
 from typing import List, Tuple, Optional
 
+from ai_ga import GeneticBattleshipAI
 from game import BattleshipGame
 from ship import Ship
 from ai import BattleshipAI
@@ -101,9 +102,11 @@ class BattleshipGUI:
 
         self.restart_img = ImageTk.PhotoImage(Image.open("restart.png").resize((60, 50)))
         
+        self.algorithms = tk.StringVar(value="Probability")
 
         self.master = master
         self.master.title("Battleship Game")
+        
         # Initialize variables
         self.setup_new_game()
 
@@ -125,19 +128,19 @@ class BattleshipGUI:
         # self.show_grid_layout(self.game_frame, 6, 8)
 
         # "Your Board" frame
-        self.player_frame = tk.LabelFrame(self.game_frame, text="Your Board", padx=10, pady=10, font=('Arial', 15))
+        self.player_frame = tk.LabelFrame(self.game_frame, text="Your Board", padx=10, pady=10, font=('Arial', 15), border=0)
         self.player_frame.grid(row=0, column=0, rowspan=3, columnspan=3, sticky="nsew", padx=10, pady=10)
 
         # "AI's Board" frame
-        self.ai_frame = tk.LabelFrame(self.game_frame, text="AI's Board", padx=10, pady=10, font=('Arial', 15))
+        self.ai_frame = tk.LabelFrame(self.game_frame, text="AI's Board", padx=10, pady=10, font=('Arial', 15), border=0)
         self.ai_frame.grid(row=0, column=3, rowspan=3, columnspan=3, sticky="nsew", padx=10, pady=10)
 
         # Instructions
-        self.instructions_frame = tk.LabelFrame(self.game_frame, text="Instructions", padx=10, pady=10, font=('Arial', 15))
+        self.instructions_frame = tk.LabelFrame(self.game_frame, text="Instructions", padx=10, pady=10, font=('Arial', 15), border=0, bg="white")
         self.instructions_frame.grid(row=0, column=6, columnspan=2, rowspan=3, sticky="nsew", padx=10, pady=10)
 
         # "Your Ships" frame
-        self.player_ships_frame = tk.LabelFrame(self.game_frame, text="Your Ships", padx=10, pady=5, font=('Arial', 15))
+        self.player_ships_frame = tk.LabelFrame(self.game_frame, text="Your Ships", padx=10, pady=5, font=('Arial', 15), border=0)
         self.player_ships_frame.grid(row=3, column=0,columnspan=1, sticky="nsew", padx=10, pady=10)
 
         # Control frame
@@ -145,12 +148,48 @@ class BattleshipGUI:
         self.control_frame.grid(row=3, column=1, columnspan=4, sticky="nsew", padx=10, pady=10)
 
         # "AI Ships" frame
-        self.ai_ships_frame = tk.LabelFrame(self.game_frame, text="AI Ships", padx=10, pady=5, font=('Arial', 15))
+        self.ai_ships_frame = tk.LabelFrame(self.game_frame, text="AI Ships", padx=10, pady=5, font=('Arial', 15), border=0)
         self.ai_ships_frame.grid(row=3, column=5, sticky="nsew", padx=10, pady=10)
 
         # Create status label
         self.status_label = tk.Label(self.control_frame, text="Place your ships!", font=('Arial', 15))
         self.status_label.pack(pady=(10, 20))
+
+        self.show_probability = tk.BooleanVar(value=False)
+    
+        # Tạo checkbox
+        self.prob_checkbox = tk.Checkbutton(
+            self.control_frame,
+            text="Show AI Probability",
+            variable=self.show_probability,
+            command=self.toggle_probability_display
+        )
+        
+        # Create algorithm frame
+        self.algorithm_frame = tk.LabelFrame(self.game_frame, text="Algorithm", padx=10, pady=5, font=('Arial', 15), border=0, bg='white')
+        self.algorithm_frame.grid(row=3, column=6, sticky='nsew', padx=10, pady=10)
+        
+        # Tạo radio buttons
+        self.algorithms.set("Probability")
+        self.algorithm_prob = ttk.Radiobutton(self.algorithm_frame,
+                                        text='Probability',
+                                        value='Probability',
+                                        variable=self.algorithms,
+                                        style='TRadiobutton',
+                                        command=self.restart_game)
+        self.algorithm_prob.pack(pady=5)
+        self.algorithm_genetic = ttk.Radiobutton(self.algorithm_frame,
+                                        text='Genetic Algorithm',
+                                        value='Genetic',
+                                        variable=self.algorithms,
+                                        style='TRadiobutton',
+                                        command=self.restart_game)
+        self.algorithm_genetic.pack(pady=5)
+
+        self.radio_style = ttk.Style()
+        self.radio_style.theme_use("alt")
+        self.radio_style.configure('TRadiobutton', cursor="hand2", bg="white")
+        self.radio_style.map("TRadiobutton", background=[('!active', 'white'), ("pressed", "gray"), ("active", "lightgray")])
 
         # Create ship status frames
         self.create_ship_status_frames()
@@ -163,18 +202,6 @@ class BattleshipGUI:
 
         # Start ship placement phase
         self.start_ship_placement()
-
-        self.show_probability = tk.BooleanVar(value=False)
-    
-        # Tạo checkbox
-        self.prob_checkbox = tk.Checkbutton(
-            self.control_frame,
-            text="Show AI Probability",
-            variable=self.show_probability,
-            command=self.toggle_probability_display
-        )
-        # Bind the resize event
-        self.root.bind('<Configure>', self.resize_buttons)
 
     def show_grid_layout(self, frame, rows, columns):
         for r in range(rows):
@@ -191,7 +218,14 @@ class BattleshipGUI:
     def setup_new_game(self):
         """Initialize all game variables for a new game"""
         self.player_game = BattleshipGame()
-        self.ai = BattleshipAI()
+        print("ALGORITHM:", self.algorithms.get())
+        if self.algorithms.get() == "Probability":
+            print("Using prob")
+            self.ai = BattleshipAI()
+        elif self.algorithms.get() == "Genetic":
+            print("Using genetic")
+            self.ai = GeneticBattleshipAI()
+            self.ai.load_strategy("4.json")
         self.ai_game = BattleshipGame()
         
         # Clear existing ship positions
@@ -258,7 +292,7 @@ class BattleshipGUI:
             tk.Label(self.ai_frame, text=str(i)).grid(row=0, column=i+1)
     def resize_buttons(self, event):
         # Calculate new dimensions based on window size
-        new_width = max(5, event.width // 20)
+        new_width = max(5, event.width // 20) 
         new_height = max(2, event.height // 40)
 
         # Update all player buttons
@@ -309,22 +343,14 @@ class BattleshipGUI:
                                             command=self.reset_placement)
         self.reset_placement_button.pack(side=tk.LEFT, padx=5)
         
+        self.instruction_image = Image.open("side tutorial.png")
+        self.instruction_photo = ImageTk.PhotoImage(self.instruction_image)
         # Create instructions label
         self.instructions_label = tk.Label(
             self.instructions_frame, 
-            text=
-                "Ship Placement:\n"
-                "• Left-click to place ships\n"
-                "•  \n"
-                "• Use 'Reset Placement' to start over\n\n"
-                "Gameplay:\n"
-                "• Left-click on AI's board to attack\n"
-                "• Try to sink all AI ships before AI sinks yours!",
-            justify=tk.LEFT,
-            font=('Arial', 15),
-            wraplength=200
+            image=self.instruction_photo,
         )
-        self.instructions_label.pack(padx=10)
+        self.instructions_label.pack()
     
     def start_ship_placement(self):
         """Start the ship placement phase"""
@@ -604,10 +630,12 @@ class BattleshipGUI:
         self.is_player_turn = False
         self.status_label.configure(text="AI's turn...")
         
-        # Update probability heatmap before AI's move
-        self.update_probability_heatmap()
-        
-        self.master.after(1000, self.handle_ai_move)
+        if self.algorithms.get() == "Probability":
+            # Update probability heatmap before AI's move
+            self.update_probability_heatmap()
+            self.master.after(1000, self.handle_ai_move)
+        elif self.algorithms.get() == "Genetic":
+            self.master.after(1000, self.handle_ga_move)
     
     def toggle_probability_display(self):
         """Toggle probability display on/off"""
@@ -637,7 +665,7 @@ class BattleshipGUI:
                 # Get probability and format it
                 prob = self.ai.probability_map[i][j]
                 if prob == 0:
-                    text = ""  # Empty text for zero probability 
+                    text = "-"  # Empty text for zero probability 
                 else:
                     # Format to 2 decimal places
                     if prob < 100:
@@ -647,7 +675,51 @@ class BattleshipGUI:
                 
                 # Update button text
                 self.player_buttons[i][j].configure(text=text)
-    
+
+    def handle_ga_move(self):
+        if self.game_over:
+            return
+        x, y = self.ai.get_next_target(self.ai.best_strategy)
+        is_hit = self.player_game.check_hit(x, y)
+        
+        if is_hit:
+            self.ai.hits.add((x, y))
+            self.ai.unconfirmed_hits.add((x, y))
+            hit_ship = None
+            for ship in self.player_game.ships:
+                if (x, y) in ship.positions:
+                    ship.hits.add((x, y))
+                    hit_ship = ship
+                    if ship.is_sunk():
+                        self.player_ship_labels[ship.name].configure(
+                            text=f"{ship.name} ({ship.length}): Sunk", 
+                            fg="red"
+                        )
+                        self.ai.sunk_ship_positions.update(hit_ship.positions)
+                        self.ai.unconfirmed_hits -= set(hit_ship.positions)
+                        for ship_name, length in list(self.ai.remaining_ships.items()):
+                            if length == len(hit_ship.positions):
+                                del self.ai.remaining_ships[ship_name]
+                                break
+        else:
+            self.ai.misses.add((x, y))
+        print(x, y, is_hit)
+        # Update visual representation
+        self.player_buttons[x][y].configure(
+            bg=ATTACK_HIT if is_hit else ATTACK_MISSED
+        )
+        
+        # Check for game over
+        if all(ship.is_sunk() for ship in self.player_game.ships):
+            self.game_over = True
+            messagebox.showinfo("Game Over", "AI won! Better luck next time!")
+            return
+        
+        # Switch turns
+        self.is_player_turn = True
+        self.status_label.configure(text="Your turn! Click on AI's board to attack")
+        # moves.append((x, y, is_hit))
+        
     def handle_ai_move(self):
         if self.game_over:
             return

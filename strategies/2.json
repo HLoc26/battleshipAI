@@ -1,0 +1,14 @@
+{
+    "parameters": {
+        "hit_weight": 3.5974634083368366,
+        "pattern_weight": 0.9043475608569264,
+        "density_weight": 1.0276308504788005,
+        "edge_weight": 0.7470832254956584,
+        "exploration_rate": 0.14272589596986612
+    },
+    "fitness": 27.52293577981651,
+    "timestamp": "2024-11-23T15:21:23.015680",
+    "generations": 20,
+    "population_size": 50,
+    "board_size": 10
+}
