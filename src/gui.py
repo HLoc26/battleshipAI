@@ -147,23 +147,43 @@ class TutorialPage:
         self.frame = tk.Frame(master)
         self.frame.pack(expand=True, fill='both')
         
-        # Load and display tutorial image
+        # Create container for image and button
+        self.container = tk.Frame(self.frame)
+        self.container.pack(expand=True, fill='both', padx=20, pady=20)
+        
+        # Load and resize tutorial image
         image = Image.open("tutorial.png")
-        # Resize image to fit screen
-        screen_width = self.master.winfo_screenwidth()
-        screen_height = self.master.winfo_screenheight()
-        image = image.resize((screen_width, screen_height - 100))  # Leave space for button
+        screen_width = self.master.winfo_screenwidth() * 0.55
+        screen_height = self.master.winfo_screenheight() * 0.5
         
+        img_width, img_height = image.size
+        width_ratio = screen_width / img_width
+        height_ratio = screen_height / img_height
+        scale_factor = min(width_ratio, height_ratio)
+        
+        new_width = int(img_width * scale_factor)
+        new_height = int(img_height * scale_factor)
+        
+        image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+        
+        # Create and display image
         self.photo = ImageTk.PhotoImage(image)
-        image_label = tk.Label(self.frame, image=self.photo)
-        image_label.pack(expand=True, fill='both')
+        self.image_label = tk.Label(self.container, image=self.photo)
+        self.image_label.pack()
         
-        # Start button
-        start_button = ttk.Button(self.frame,
-                                text="Start",
-                                command=self.start_game,
-                                style='Large.TButton', cursor="hand2")
-        start_button.pack(pady=20)
+        # Create button container frame with padding
+        self.button_frame = tk.Frame(self.container)
+        self.button_frame.pack(pady=(20, 0))  # Add top padding only
+        
+        # Create start button
+        self.start_button = ttk.Button(
+            self.button_frame,
+            text="Start",
+            command=self.start_game,
+            style='Large.TButton',
+            cursor="hand2"
+        )
+        self.start_button.pack()
 
     def start_game(self):
         self.frame.destroy()
@@ -594,7 +614,8 @@ class BattleshipGUI:
         self.reset_placement_button.configure(state='disabled')
         # Enable restart button when game starts
         self.restart_button.configure(state='normal')
-        self.prob_checkbox.pack(pady=10)
+        if self.algorithms.get() == "Probability":
+            self.prob_checkbox.pack(pady=10)
     
     def reset_placement(self):
         """Reset the ship placement phase"""
@@ -661,8 +682,9 @@ class BattleshipGUI:
         
         # Disable restart button
         self.restart_button.configure(state='disabled')
+        if self.algorithms.get() != "Probability":
+            self.prob_checkbox.pack_forget()
         self.show_probability.set(False)
-        self.prob_checkbox.pack_forget()
         # Start placement phase
         self.start_ship_placement()
     
@@ -711,23 +733,30 @@ class BattleshipGUI:
     
     def toggle_probability_display(self):
         """Toggle probability display on/off"""
+        if not isinstance(self.ai, BattleshipAI):
+            return
+            
         if self.show_probability.get():
+            # Force AI to update its probability map
+            self.ai.get_next_target()
             self.update_probability_heatmap()
         else:
-            # Clear all probability numbers
+            # Clear all probability display
             for i in range(10):
                 for j in range(10):
+                    # Only clear cells that haven't been attacked
                     if self.player_buttons[i][j]['bg'] not in [ATTACK_HIT, ATTACK_MISSED]:
                         self.player_buttons[i][j].configure(text="")
 
     def update_probability_heatmap(self):
         """Update the player's board visualization with AI's probability numbers"""
-        # Nếu checkbox không được chọn, không hiển thị số
-        if not self.show_probability.get():
+        if not self.show_probability.get() or not isinstance(self.ai, BattleshipAI):
             return
+            
+        # Get fresh probability map
+        self.ai.update_probability_map()
+        probs = self.ai.probability_map
 
-        print(self.ai.probability_map)
-        print("=======================")
         for i in range(10):
             for j in range(10):
                 # Skip cells that have been hit
@@ -735,15 +764,11 @@ class BattleshipGUI:
                     continue
                     
                 # Get probability and format it
-                prob = self.ai.probability_map[i][j]
+                prob = probs[i][j]
                 if prob == 0:
-                    text = "-"  # Empty text for zero probability 
+                    text = ""
                 else:
-                    # Format to 2 decimal places
-                    if prob < 100:
-                        text = f"{prob * 100:.2f}"
-                    else:
-                        text = f"{prob:.2f}"
+                    text = f"{prob:.3f}"
                 
                 # Update button text
                 self.player_buttons[i][j].configure(text=text)
@@ -828,6 +853,10 @@ class BattleshipGUI:
             messagebox.showinfo("Game Over", "AI won! Better luck next time!")
             return
         
+        # Update probability display if enabled
+        if self.show_probability.get() and isinstance(self.ai, BattleshipAI):
+            self.update_probability_heatmap()
+            
         # Switch turns
         self.is_player_turn = True
         self.status_label.configure(text="Your turn! Click on AI's board to attack")
