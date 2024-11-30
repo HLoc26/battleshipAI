@@ -565,25 +565,14 @@ class BattleshipGUI:
     
     def handle_ai_board_btn_enter(self, x, y):
         bg = self.ai_buttons[x][y].cget('bg')
-        if bg == 'SystemButtonFace':
-            self.ai_buttons[x][y].configure(bg='gray')
+        if bg == WATER_COLOR:
+            self.ai_buttons[x][y].configure(bg=GRID_LINE_COLOR)
 
     def handle_ai_board_btn_leave(self, x, y):
-        # Check if this position was hit on any ship
-        is_hit = False
-        for ship in self.ai_game.ships:
-            if (x, y) in ship.hits:
-                self.ai_buttons[x][y].configure(bg=ATTACK_HIT)
-                is_hit = True
-                break
-        
-        # If it's not a hit but the background isn't default, it must be a miss
-        if not is_hit:
-            bg = self.ai_buttons[x][y].cget('bg')
-            if bg != 'SystemButtonFace' and bg != 'gray':
-                self.ai_buttons[x][y].configure(bg=ATTACK_MISSED)
-            else:
-                self.ai_buttons[x][y].configure(bg='SystemButtonFace')
+        bg = self.ai_buttons[x][y].cget('bg')
+        if not self.ai_game.board[x][y]:
+            if bg == GRID_LINE_COLOR:
+                self.ai_buttons[x][y].configure(bg=WATER_COLOR)
                     
     def finish_setup(self):
         """Finish the setup phase and start the game"""
