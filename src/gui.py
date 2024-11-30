@@ -11,26 +11,25 @@ import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
 
+# Modern Light Theme Colors
+WATER_COLOR = "#e8f4f8"          # Light blue for water/grid
+GRID_LINE_COLOR = "#c5e4f3"      # Slightly darker blue for grid lines
+BACKGROUND_COLOR = "#ffffff"      # White for background
+ACCENT_COLOR = "#4a90e2"         # Blue for highlights/buttons
+HOVER_COLOR = "#357abd"          # Darker blue for hover states
+TEXT_COLOR = "#2c3e50"           # Dark gray for text
+SHIP_COLOR = "#34495e"           # Dark blue-gray for ships
+HIT_COLOR = "#e74c3c"           # Red for hits
+MISS_COLOR = "#bdc3c7"          # Light gray for misses
+
 # Ship colors
-SHIP_PREVIEW_COLOR = "#2E5090"    # Navy blue for ship preview
-SHIP_PLACED_COLOR = "#1B365C"     # Darker navy for placed ships
+SHIP_PREVIEW_COLOR = "#7f8c8d"    # Gray for ship preview
+SHIP_PLACED_COLOR = "#34495e"     # Dark gray-blue for placed ships
 
 # Attack result colors
-ATTACK_MISSED = "#7C92A6"         # Steel gray for missed shots
-ATTACK_HIT = "#BC2F2F"           # Dark red for hits
+ATTACK_MISSED = "#bdc3c7"         # Light gray for missed shots
+ATTACK_HIT = "#e74c3c"           # Red for hits
 
-# Modern Dark Theme Colors
-WATER_COLOR = "#1a2b3c"          # Deep navy blue for water/grid
-GRID_LINE_COLOR = "#304b6d"      # Lighter blue for grid lines
-BACKGROUND_COLOR = "#0f1724"     # Dark blue-gray for background
-ACCENT_COLOR = "#00ff9d"         # Neon green for highlights/buttons
-
-# Additional UI Colors
-TEXT_COLOR = "#ffffff"           # White for text
-HOVER_COLOR = "#00cc7d"         # Darker version of accent for hover states
-SHIP_COLOR = "#465975"          # Slate blue for ships
-HIT_COLOR = "#ff4242"           # Bright red for hits
-MISS_COLOR = "#707070"          # Gray for misses  # Gold for highlights/buttons
 # In gui.py, update the HomePage class
 
 class HomePage:
@@ -51,6 +50,30 @@ class HomePage:
         self.create_styled_widgets()
     
     def create_styled_widgets(self):
+        style = ttk.Style()
+        style.configure("TButton",
+            padding=10,
+            relief="flat",
+            background=ACCENT_COLOR,
+            foreground=TEXT_COLOR,
+            font=("Arial", 12)
+        )
+        
+        style.configure("TLabel",
+            font=("Arial", 12),
+            foreground=TEXT_COLOR
+        )
+        
+        style.configure("TFrame",
+            background=BACKGROUND_COLOR
+        )
+        
+        # Update button hover effects
+        style.map("TButton",
+            background=[("active", HOVER_COLOR)],
+            foreground=[("active", "#ffffff")]
+        )
+
         # Create and configure start button
         self.start_button = tk.Button(
             self.master,
@@ -207,7 +230,7 @@ class BattleshipGUI:
         master.grid_columnconfigure(0, weight=1)
         
         # Create main game frame
-        self.game_frame = tk.Frame(master, bg="lightblue")
+        self.game_frame = tk.Frame(master, bg=BACKGROUND_COLOR)
         self.game_frame.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
 
         # Cấu hình grid trong `game_frame` thành layout 4x8
@@ -220,11 +243,11 @@ class BattleshipGUI:
         # self.show_grid_layout(self.game_frame, 6, 8)
 
         # "Your Board" frame
-        self.player_frame = tk.LabelFrame(self.game_frame, text="Your Board", padx=10, pady=10, font=('Arial', 15), border=0)
+        self.player_frame = tk.LabelFrame(self.game_frame, text="Your Board", padx=10, pady=10, font=('Arial', 15), border=0, bg=BACKGROUND_COLOR, fg=TEXT_COLOR)
         self.player_frame.grid(row=0, column=0, rowspan=3, columnspan=3, sticky="nsew", padx=10, pady=10)
 
         # "AI's Board" frame
-        self.ai_frame = tk.LabelFrame(self.game_frame, text="AI's Board", padx=10, pady=10, font=('Arial', 15), border=0)
+        self.ai_frame = tk.LabelFrame(self.game_frame, text="AI's Board", padx=10, pady=10, font=('Arial', 15), border=0, bg=BACKGROUND_COLOR, fg=TEXT_COLOR)
         self.ai_frame.grid(row=0, column=3, rowspan=3, columnspan=3, sticky="nsew", padx=10, pady=10)
 
         # Instructions
@@ -232,19 +255,19 @@ class BattleshipGUI:
         self.instructions_frame.grid(row=0, column=6, columnspan=2, rowspan=3, sticky="nsew", padx=10, pady=10)
 
         # "Your Ships" frame
-        self.player_ships_frame = tk.LabelFrame(self.game_frame, text="Your Ships", padx=10, pady=5, font=('Arial', 15), border=0)
+        self.player_ships_frame = tk.LabelFrame(self.game_frame, text="Your Ships", padx=10, pady=5, font=('Arial', 15), border=0, bg=BACKGROUND_COLOR, fg=TEXT_COLOR)
         self.player_ships_frame.grid(row=3, column=0,columnspan=1, sticky="nsew", padx=10, pady=10)
 
         # Control frame
-        self.control_frame = tk.Frame(self.game_frame, padx=10, pady=10)
+        self.control_frame = tk.Frame(self.game_frame, padx=10, pady=10, bg=BACKGROUND_COLOR)
         self.control_frame.grid(row=3, column=1, columnspan=4, sticky="nsew", padx=10, pady=10)
 
         # "AI Ships" frame
-        self.ai_ships_frame = tk.LabelFrame(self.game_frame, text="AI Ships", padx=10, pady=5, font=('Arial', 15), border=0)
+        self.ai_ships_frame = tk.LabelFrame(self.game_frame, text="AI Ships", padx=10, pady=5, font=('Arial', 15), border=0, bg=BACKGROUND_COLOR, fg=TEXT_COLOR)
         self.ai_ships_frame.grid(row=3, column=5, sticky="nsew", padx=10, pady=10)
 
         # Create status label
-        self.status_label = tk.Label(self.control_frame, text="Place your ships!", font=('Arial', 15))
+        self.status_label = tk.Label(self.control_frame, text="Place your ships!", font=('Arial', 15), bg=BACKGROUND_COLOR, fg=TEXT_COLOR)
         self.status_label.pack(pady=(10, 20))
 
         self.show_probability = tk.BooleanVar(value=False)
@@ -351,7 +374,7 @@ class BattleshipGUI:
             ai_row = []
             for j in range(10):
                 # Player's board buttons - increased width for probability numbers
-                p_btn = tk.Button(self.player_frame, width=8, height=3, cursor='hand2')
+                p_btn = tk.Button(self.player_frame, width=8, height=3, cursor='hand2', bg=WATER_COLOR, relief="flat", borderwidth=1, highlightthickness=1, highlightbackground=GRID_LINE_COLOR)
                 p_btn.grid(row=i+1, column=j+1)
                 p_btn.bind('<Enter>', lambda e, x=i, y=j: self.preview_ship_placement(x, y))
                 p_btn.bind('<Leave>', lambda e: self.clear_ship_preview())
@@ -360,7 +383,7 @@ class BattleshipGUI:
                 player_row.append(p_btn)
                 
                 # AI's board buttons
-                ai_btn = tk.Button(self.ai_frame, width=8, height=3)
+                ai_btn = tk.Button(self.ai_frame, width=8, height=3, bg=WATER_COLOR, relief="flat", cursor="hand2", borderwidth=1, highlightthickness=1, highlightbackground=GRID_LINE_COLOR)
                 ai_btn.grid(row=i+1, column=j+1)
                 ai_btn.configure(state='disabled')  # Disabled during setup
                 ai_row.append(ai_btn)
@@ -426,13 +449,26 @@ class BattleshipGUI:
         self.restart_button = tk.Button(self.buttons_frame,
                                     image=self.restart_img, 
                                     command=self.restart_game,
-                                    state='disabled')
+                                    state='disabled',
+                                    bg=ACCENT_COLOR,
+                                    activebackground=HOVER_COLOR,
+                                    relief="flat",
+                                    cursor="hand2")
         self.restart_button.pack(side=tk.LEFT, padx=5)
         
         # Create reset placement button
         self.reset_placement_button = tk.Button(self.buttons_frame,
                                             text="Reset Placement", 
-                                            command=self.reset_placement)
+                                            command=self.reset_placement,
+                                            bg=ACCENT_COLOR,
+                                            fg="white",
+                                            activebackground=HOVER_COLOR,
+                                            activeforeground="white",
+                                            relief="flat",
+                                            cursor="hand2",
+                                            font=("Arial", 12),
+                                            padx=20,
+                                            pady=10)
         self.reset_placement_button.pack(side=tk.LEFT, padx=5)
         
         self.instruction_image = Image.open("side tutorial.png")
