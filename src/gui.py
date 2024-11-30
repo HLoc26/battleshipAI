@@ -37,7 +37,10 @@ class HomePage:
         self.master = master
         self.master.title("Battleship")
         
-        # Set window size and position
+        # Maximize window by default
+        self.master.state('zoomed')  # For Windows
+        
+        # Set window size and position as fallback
         window_width = 1920
         window_height = 1080
         screen_width = self.master.winfo_screenwidth()
@@ -514,20 +517,35 @@ class BattleshipGUI:
         # Calculate ship positions
         positions = self.get_ship_positions(x, y, ship_length)
         if not positions:  # Invalid placement
-            return
-        
-        # Show preview
-        self.placement_preview = set(positions)
-        for px, py in positions:
-            self.player_buttons[px][py].configure(bg=SHIP_PREVIEW_COLOR)
-    
+            # Show red preview for invalid placement
+            if self.is_horizontal:
+                positions = [(x, y + i) for i in range(ship_length) if y + i < 10]
+            else:
+                positions = [(x + i, y) for i in range(ship_length) if x + i < 10]
+                
+            for px, py in positions:
+                if self.player_game.board[px][py] == ' ':
+                    self.player_buttons[px][py].configure(bg='#ffcccb')  # Light red for invalid
+        else:
+            # Show valid preview
+            self.placement_preview = set(positions)
+            for px, py in positions:
+                self.player_buttons[px][py].configure(bg=SHIP_PREVIEW_COLOR)
+
     def clear_ship_preview(self):
         """Clear the ship placement preview"""
         for x, y in self.placement_preview:
             if self.player_game.board[x][y] == ' ':
-                self.player_buttons[x][y].configure(bg="SystemButtonFace")
+                self.player_buttons[x][y].configure(bg=WATER_COLOR)
         self.placement_preview.clear()
-    
+
+        # Also clear any invalid placement previews
+        for i in range(10):
+            for j in range(10):
+                if (self.player_game.board[i][j] == ' ' and 
+                    self.player_buttons[i][j].cget('bg') == '#ffcccb'):
+                    self.player_buttons[i][j].configure(bg=WATER_COLOR)
+
     def get_ship_positions(self, x: int, y: int, length: int) -> List[Tuple[int, int]]:
         """Get list of positions for ship placement, or empty list if invalid"""
         positions = []
@@ -600,15 +618,14 @@ class BattleshipGUI:
             )
     
     def handle_ai_board_btn_enter(self, x, y):
-        bg = self.ai_buttons[x][y].cget('bg')
-        if bg == WATER_COLOR:
+        # Only change color if the cell hasn't been attacked yet
+        if not self.ai_game.board[x][y]:
             self.ai_buttons[x][y].configure(bg=GRID_LINE_COLOR)
 
     def handle_ai_board_btn_leave(self, x, y):
-        bg = self.ai_buttons[x][y].cget('bg')
+        # Only reset color if the cell hasn't been attacked yet
         if not self.ai_game.board[x][y]:
-            if bg == GRID_LINE_COLOR:
-                self.ai_buttons[x][y].configure(bg=WATER_COLOR)
+            self.ai_buttons[x][y].configure(bg=WATER_COLOR)
                     
     def finish_setup(self):
         """Finish the setup phase and start the game"""
