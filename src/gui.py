@@ -639,8 +639,18 @@ class BattleshipGUI:
                     command=lambda x=i, y=j: self.handle_player_move(x, y)
                 )
                 self.ai_buttons[i][j].configure(cursor="cross")
-                self.ai_buttons[i][j].bind('<Enter>', lambda e, x=i, y=j: self.handle_ai_board_btn_enter(x, y))
-                self.ai_buttons[i][j].bind('<Leave>', lambda e, x=i, y=j: self.handle_ai_board_btn_leave(x, y))
+
+                # Add hover effects for better visual feedback
+                def on_enter(e, x=i, y=j):
+                    if self.ai_buttons[x][y]['state'] != 'disabled':
+                        self.ai_buttons[x][y].configure(bg=HOVER_COLOR)
+
+                def on_leave(e, x=i, y=j):
+                    if self.ai_buttons[x][y]['state'] != 'disabled':
+                        self.ai_buttons[x][y].configure(bg=WATER_COLOR)
+
+                self.ai_buttons[i][j].bind('<Enter>', on_enter)
+                self.ai_buttons[i][j].bind('<Leave>', on_leave)
         for widget in self.ai_ships_frame.winfo_children():
             widget.destroy()        
         # Initialize AI ships display
@@ -737,6 +747,10 @@ class BattleshipGUI:
         # Check if cell was already hit
         if self.ai_buttons[x][y]['state'] == 'disabled':
             return
+        
+        # Unbind hover events when cell is attacked
+        self.ai_buttons[x][y].unbind('<Enter>')
+        self.ai_buttons[x][y].unbind('<Leave>')
         
         # Process player's move
         is_hit = self.ai_game.check_hit(x, y)
