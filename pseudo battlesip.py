@@ -135,9 +135,7 @@ class Ship:
 
 
     def draw(self, window):
-        # Draw the ship sprite onto the window
         window.blit(self.image, self.rect)
-        # Draw each gun attached to the ship
         for guns in self.gunslist:
             guns.draw(window, self)
 
@@ -199,12 +197,13 @@ class Button:
         self.msg = self.addText(msg)
         self.msgRect = self.msg.get_rect(center=self.rect.center)
 
+
     def addText(self, msg):
         font = pygame.font.SysFont('Stencil', 22)
         message = font.render(msg, 1, (255,255,255))
         return message
 
-    # Highlights button when mouse hovers over it
+
     def focusOnButton(self, window):
         if self.active:
             if self.rect.collidepoint(pygame.mouse.get_pos()):
@@ -212,7 +211,7 @@ class Button:
             else:
                 window.blit(self.image, self.rect)
 
-    # Handles button actions based on button name
+
     def actionOnPress(self):
         if self.active:
             if self.name == 'Randomize':
@@ -228,26 +227,22 @@ class Button:
                 self.restartTheGame()
 
 
-    # Randomizes ship positions on the game board
     def randomizeShipPositions(self, shiplist, gameGrid):
         if DEPLOYMENT == True:
             randomizeShipPositions(shiplist, gameGrid)
 
 
-    # Resets ship positions to default
     def resetShips(self, shiplist):
         if DEPLOYMENT == True:
             for ship in shiplist:
                 ship.returnToDefaultPosition()
 
 
-    # Handles deployment phase button actions
     def deploymentPhase(self):
         pass
 
 
     def restartTheGame(self):
-    # Reset game state and ship positions
         TOKENS.clear()
         self.resetShips(pFleet)
         self.randomizeShipPositions(cFleet, cGameGrid)
@@ -256,7 +251,6 @@ class Button:
 
 
     def updateButtons(self, gameStatus):
-    # change button name & text based on game status
         if self.name == 'Deploy' and gameStatus == False:
             self.name = 'Redeploy'
         elif self.name == 'Redeploy' and gameStatus == True:
@@ -397,7 +391,7 @@ class HardComputer(EasyComputer):
                 self.turn = False
         return self.turn
 
-    # Generates a list of possible moves based on previous hits
+
     def generateMoves(self, coords, grid, lstDir=None):
         x, y = coords
         nx, ny = 0, 0
@@ -453,7 +447,7 @@ class Tokens:
         self.explosionIndex = 0
         self.explosion = False
 
-    # Handles animation for hits and misses
+
     def animate_Explosion(self):
         self.explosionIndex += 1
         if self.explosionIndex < len(self.explosionList):
@@ -462,7 +456,6 @@ class Tokens:
             return self.animate_fire()
 
 
-    # Handles animation for fire and explosion
     def animate_fire(self):
         if pygame.time.get_ticks() - self.timer >= 100:
             self.timer = pygame.time.get_ticks()
@@ -474,7 +467,6 @@ class Tokens:
             return self.imageList[self.imageIndex]
 
 
-    # Draws the token on the game board
     def draw(self, window):
         if not self.imageList:
             window.blit(self.image, self.rect)
@@ -573,7 +565,7 @@ def loadSpriteSheetImages(spriteSheet, rows, cols, newSize, size):
     return image
 
 
-# Gets the next frame in an animation sequence(looping)
+# Gets the next frame in an animation sequence
 def increaseAnimationImage(imageList, ind):
     return imageList[ind]
 
@@ -588,7 +580,9 @@ def createFleet():
                  FLEET[name][2],
                  FLEET[name][3],
                  FLEET[name][4],
-                 FLEET[name][5])
+                 FLEET[name][5],
+                 FLEET[name][6],
+                 FLEET[name][7])
         )
     return fleet
 
@@ -706,7 +700,7 @@ def shipLabelMaker(msg):
 # Shows ship names on screen
 def displayShipNames(window):
     shipLabels = []
-    for ship in ['carrier', 'battleship', 'destroyer', 'submarine', 'patrol boat']:
+    for ship in ['carrier', 'battleship', 'cruiser', 'destroyer', 'submarine', 'patrol boat', 'rescue boat']:
         shipLabels.append(shipLabelMaker(ship))
     startPos = 25
     for item in shipLabels:
@@ -820,6 +814,8 @@ pygame.display.set_caption('Battleship AI')
 FLEET = {
     'battleship': ['battleship', 'assets/images/ships/battleship/battleship.png', (125, 600), (40, 195),
                    4, 'assets/images/ships/battleship/battleshipgun.png', (0.4, 0.125), [-0.525, -0.34, 0.67, 0.49]],
+    'cruiser': ['cruiser', 'assets/images/ships/cruiser/cruiser.png', (200, 600), (40, 195),
+                2, 'assets/images/ships/cruiser/cruisergun.png', (0.4, 0.125), [-0.36, 0.64]],
     'destroyer': ['destroyer', 'assets/images/ships/destroyer/destroyer.png', (275, 600), (30, 145),
                   2, 'assets/images/ships/destroyer/destroyergun.png', (0.5, 0.15), [-0.52, 0.71]],
     'patrol boat': ['patrol boat', 'assets/images/ships/patrol boat/patrol boat.png', (425, 600), (20, 95),
@@ -828,6 +824,8 @@ FLEET = {
                   1, 'assets/images/ships/submarine/submarinegun.png', (0.25, 0.125), [-0.45]],
     'carrier': ['carrier', 'assets/images/ships/carrier/carrier.png', (50, 600), (45, 245),
                 0, '', None, None],
+    'rescue ship': ['rescue ship', 'assets/images/ships/rescue ship/rescue ship.png', (500, 600), (20, 95),
+                    0, '', None, None]
 }
 STAGE = ['Main Menu', 'Deployment', 'Game Over']
 
