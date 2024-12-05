@@ -588,7 +588,9 @@ def createFleet():
                  FLEET[name][2],
                  FLEET[name][3],
                  FLEET[name][4],
-                 FLEET[name][5])
+                 FLEET[name][5],
+                 FLEET[name][6],
+                 FLEET[name][7])
         )
     return fleet
 
@@ -716,7 +718,7 @@ def displayShipNames(window):
 
 # Handles main menu screen display
 def mainMenuScreen(window):
-    window.fill((0, 0, 0))
+    window.fill((255, 255, 255))
     window.blit(MAINMENUIMAGE, (0, 0))
 
     for button in BUTTONS:
