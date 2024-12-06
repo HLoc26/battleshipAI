@@ -724,8 +724,9 @@ def deploymentScreen(window):
     window.fill((0, 0, 0))
 
     window.blit(BACKGROUND, (0, 0))
-    window.blit(PGAMEGRIDIMG, (0, 0))
-    window.blit(CGAMEGRIDIMG, (cGameGrid[0][0][0] - 50, cGameGrid[0][0][1] - 50))
+    window.blit(PGAMEGRIDIMG, (50, 50))
+    target_x = cGameGrid[0][0][0] - 50
+    window.blit(CGAMEGRIDIMG, (target_x, cGameGrid[0][0][1] - 50))
 
     for ship in pFleet:
         ship.draw(window)
@@ -735,6 +736,7 @@ def deploymentScreen(window):
     for ship in cFleet:
         ship.snapToGridEdge(cGameGrid)
         ship.snapToGrid(cGameGrid)
+        ship.rect.x -= 100  
 
     for button in BUTTONS:
         if button.name in ['Randomize', 'Reset', 'Deploy', 'Quit', 'Radar Scan', 'Redeploy']:
@@ -808,24 +810,24 @@ pygame.display.set_caption('Battleship AI')
 
 
 FLEET = {
-    'battleship': ['battleship', 'assets/images/ships/battleship/battleship.png', (125, 600), (40, 195),
+    'battleship': ['battleship', 'assets/images/ships/battleship/battleship.png', (120, 600), (40, 195),
                    4, 'assets/images/ships/battleship/battleshipgun.png', (0.4, 0.125), [-0.525, -0.34, 0.67, 0.49]],
-    'destroyer': ['destroyer', 'assets/images/ships/destroyer/destroyer.png', (275, 600), (30, 145),
-                  2, 'assets/images/ships/destroyer/destroyergun.png', (0.5, 0.15), [-0.52, 0.71]],
-    'patrol boat': ['patrol boat', 'assets/images/ships/patrol boat/patrol boat.png', (425, 600), (20, 95),
+    'destroyer': ['destroyer', 'assets/images/ships/destroyer/destroyer.png', (180, 600), (30, 145),
+                  0, '', None, None],
+    'cruiser': ['cruiser', 'assets/images/ships/cruiser/cruiser.png', (300, 600), (20, 95),
                     0, '', None, None],
-    'submarine': ['submarine', 'assets/images/ships/submarine/submarine.png', (350, 600), (30, 145),
+    'submarine': ['submarine', 'assets/images/ships/submarine/submarine.png', (240, 600), (30, 145),
                   1, 'assets/images/ships/submarine/submarinegun.png', (0.25, 0.125), [-0.45]],
     'carrier': ['carrier', 'assets/images/ships/carrier/carrier.png', (50, 600), (45, 245),
                 0, '', None, None],
 }
 STAGE = ['Main Menu', 'Deployment', 'Game Over']
 
-pGameGrid = createGameGrid(ROWS, COLS, CELLSIZE, (50, 50))
+pGameGrid = createGameGrid(ROWS, COLS, CELLSIZE, (100, 100))
 pGameLogic = createGameLogic(ROWS, COLS)
 pFleet = createFleet()
 
-cGameGrid = createGameGrid(ROWS, COLS, CELLSIZE, (SCREENWIDTH - (ROWS * CELLSIZE), 50))
+cGameGrid = createGameGrid(ROWS, COLS, CELLSIZE, (SCREENWIDTH - (ROWS * CELLSIZE) -50, 100))
 cGameLogic = createGameLogic(ROWS, COLS)
 cFleet = createFleet()
 randomizeShipPositions(cFleet, cGameGrid)
@@ -841,9 +843,9 @@ CGAMEGRIDIMG = loadImage('assets/images/grids/comp_grid.png', ((ROWS + 1) * CELL
 BUTTONIMAGE = loadImage('assets/images/buttons/button.png', (150, 50))
 BUTTONIMAGE1 = loadImage('assets/images/buttons/button.png', (250, 100))
 BUTTONS = [
-    Button(BUTTONIMAGE, (150, 50), (25, 900), 'Randomize'),
-    Button(BUTTONIMAGE, (150, 50), (200, 900), 'Reset'),
-    Button(BUTTONIMAGE, (150, 50), (375, 900), 'Deploy'),
+    Button(BUTTONIMAGE, (150, 50), (375, 900), 'Randomize'),
+    Button(BUTTONIMAGE, (150, 50), (550, 900), 'Reset'),
+    Button(BUTTONIMAGE, (150, 50), (725, 900), 'Deploy'),
     Button(BUTTONIMAGE1, (250, 100), (900, SCREENHEIGHT // 2 - 150), 'AI#1'),
     Button(BUTTONIMAGE1, (250, 100), (900, SCREENHEIGHT // 2 + 150), 'AI#2')
 ]
