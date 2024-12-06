@@ -705,16 +705,6 @@ def shipLabelMaker(msg):
     return textMessage
 
 
-# Shows ship names on screen
-def displayShipNames(window):
-    shipLabels = []
-    for ship in ['carrier', 'battleship', 'destroyer', 'submarine', 'patrol boat']:
-        shipLabels.append(shipLabelMaker(ship))
-    startPos = 25
-    for item in shipLabels:
-        window.blit(item, (startPos, 600))
-        startPos += 75
-
 
 # Handles main menu screen display
 def mainMenuScreen(window):
@@ -741,8 +731,6 @@ def deploymentScreen(window):
         ship.draw(window)
         ship.snapToGridEdge(pGameGrid)
         ship.snapToGrid(pGameGrid)
-
-    displayShipNames(window)
 
     for ship in cFleet:
         ship.snapToGridEdge(cGameGrid)
