@@ -1,9 +1,13 @@
-import pygame
+import pygame, sys
 import random
+
 
 
 pygame.init()
 
+
+def get_font(size): 
+    return pygame.font.Font("assets/font/retro.ttf", size)
 
 # Main ship class that handles ship creation, movement, rotation and collision detection
 class Ship:
@@ -310,13 +314,13 @@ class Player:
 class EasyComputer:
     def __init__(self):
         self.turn = False
-        self.status = self.computerStatus('Thinking')
-        self.name = 'AI#1'
+        self.status = self.computerStatus('The Computer is Thinking')
+        self.name = 'Genetic Alg.'
 
 
     def computerStatus(self, msg):
         image = pygame.font.SysFont('Stencil', 22)
-        message = image.render(msg, 1, (0, 0, 0))
+        message = image.render(msg, 1, (255, 255, 255))
         return message
 
 
@@ -710,9 +714,10 @@ def shipLabelMaker(msg):
 def mainMenuScreen(window):
     window.fill((255, 255, 255))
     window.blit(MAINMENUIMAGE, (0, 0))
+    window.blit(MENU_TEXT, (SCREENWIDTH // 2 - 450, 100))
 
     for button in BUTTONS:
-        if button.name in ['AI#1', 'AI#2']:
+        if button.name in ['Genetic Alg.', 'Probability']:
             button.active = True
             button.draw(window)
         else:
@@ -773,7 +778,7 @@ def endScreen(window):
     window.blit(ENDSCREENIMAGE, (0, 0))
 
     for button in BUTTONS:
-        if button.name in ['AI#1', 'AI#2', 'Quit']:
+        if button.name in ['Genetic Alg.', 'Probability', 'Quit']:
             button.active = True
             button.draw(window)
         else:
@@ -810,15 +815,15 @@ pygame.display.set_caption('Battleship AI')
 
 
 FLEET = {
-    'battleship': ['battleship', 'assets/images/ships/battleship/battleship.png', (120, 600), (40, 195),
+    'battleship': ['battleship', 'assets/images/ships/battleship/battleship.png', (120, 630), (40, 195),
                    4, 'assets/images/ships/battleship/battleshipgun.png', (0.4, 0.125), [-0.525, -0.34, 0.67, 0.49]],
-    'destroyer': ['destroyer', 'assets/images/ships/destroyer/destroyer.png', (180, 600), (30, 145),
+    'destroyer': ['destroyer', 'assets/images/ships/destroyer/destroyer.png', (180, 630), (30, 145),
                   0, '', None, None],
-    'cruiser': ['cruiser', 'assets/images/ships/cruiser/cruiser.png', (300, 600), (20, 95),
+    'cruiser': ['cruiser', 'assets/images/ships/cruiser/cruiser.png', (300, 630), (20, 95),
                     0, '', None, None],
-    'submarine': ['submarine', 'assets/images/ships/submarine/submarine.png', (240, 600), (30, 145),
+    'submarine': ['submarine', 'assets/images/ships/submarine/submarine.png', (240, 630), (30, 145),
                   1, 'assets/images/ships/submarine/submarinegun.png', (0.25, 0.125), [-0.45]],
-    'carrier': ['carrier', 'assets/images/ships/carrier/carrier.png', (50, 600), (45, 245),
+    'carrier': ['carrier', 'assets/images/ships/carrier/carrier.png', (50, 630), (45, 245),
                 0, '', None, None],
 }
 STAGE = ['Main Menu', 'Deployment', 'Game Over']
@@ -835,19 +840,21 @@ randomizeShipPositions(cFleet, cGameGrid)
 printGameLogic()
 
 
-MAINMENUIMAGE = loadImage('assets/images/background/Battleship.jpg', (SCREENWIDTH // 3 * 2, SCREENHEIGHT))
+MAINMENUIMAGE = loadImage('assets/images/background.png', (SCREENWIDTH, SCREENHEIGHT))
 ENDSCREENIMAGE = loadImage('assets/images/background/Carrier.jpg', (SCREENWIDTH, SCREENHEIGHT))
 BACKGROUND = loadImage('assets/images/background/gamebg.png', (SCREENWIDTH, SCREENHEIGHT))
 PGAMEGRIDIMG = loadImage('assets/images/grids/player_grid.png', ((ROWS + 1) * CELLSIZE, (COLS + 1) * CELLSIZE))
 CGAMEGRIDIMG = loadImage('assets/images/grids/comp_grid.png', ((ROWS + 1) * CELLSIZE, (COLS + 1) * CELLSIZE))
 BUTTONIMAGE = loadImage('assets/images/buttons/button.png', (150, 50))
 BUTTONIMAGE1 = loadImage('assets/images/buttons/button.png', (250, 100))
+
+MENU_TEXT = get_font(50).render("BATTLESHIP VS. AI", True, "#b68f40")
 BUTTONS = [
-    Button(BUTTONIMAGE, (150, 50), (375, 900), 'Randomize'),
-    Button(BUTTONIMAGE, (150, 50), (550, 900), 'Reset'),
-    Button(BUTTONIMAGE, (150, 50), (725, 900), 'Deploy'),
-    Button(BUTTONIMAGE1, (250, 100), (900, SCREENHEIGHT // 2 - 150), 'AI#1'),
-    Button(BUTTONIMAGE1, (250, 100), (900, SCREENHEIGHT // 2 + 150), 'AI#2')
+    Button(BUTTONIMAGE, (150, 50), (375, 880), 'Randomize'),
+    Button(BUTTONIMAGE, (150, 50), (550, 880), 'Reset'),
+    Button(BUTTONIMAGE, (150, 50), (725, 880), 'Deploy'),
+    Button(BUTTONIMAGE1, (250, 100), (SCREENWIDTH // 2 - 300, SCREENHEIGHT // 2), 'Genetic Alg.'),
+    Button(BUTTONIMAGE1, (250, 100), (SCREENWIDTH // 2 + 50, SCREENHEIGHT // 2), 'Probability')
 ]
 REDTOKEN = loadImage('assets/images/tokens/redtoken.png', (CELLSIZE, CELLSIZE))
 GREENTOKEN = loadImage('assets/images/tokens/greentoken.png', (CELLSIZE, CELLSIZE))
@@ -910,11 +917,11 @@ while RUNGAME:
                             SCANNER = True
                             INDNUM = 0
                             BLIPPOSITION = pick_random_ship_location(cGameLogic)
-                        elif (button.name == 'AI#1' or button.name == 'AI#2') and button.active == True:
-                            if button.name == 'AI#1':
+                        elif (button.name == 'Genetic Alg.' or button.name == 'Probability') and button.active == True:
+                            if button.name == 'Genetic Alg.':
                                 computer = EasyComputer()
 
-                            elif button.name == 'AI#2':
+                            elif button.name == 'Probability':
                                 computer = HardComputer()
                             if GAMESTATE == 'Game Over':
                                 TOKENS.clear()
