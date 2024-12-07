@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 import os
 from datetime import datetime
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 from tkinter import simpledialog
 import json
 from ai_ga import GeneticBattleshipAI
@@ -90,45 +90,49 @@ class HighScoreManager:
 class HomePage:
     def __init__(self, master):
         self.master = master
+        self.war_font_48 = tkFont.Font(family="Stencil", size=48, weight="bold")  # Example war-themed font
+        self.war_font_24 = tkFont.Font(family="Stencil", size=24, weight="bold")  # Example war-themed font
+        self.war_font_14 = tkFont.Font(family="Stencil", size=14, weight="bold")  # Example war-themed font
+        self.btn_bg = ImageTk.PhotoImage(Image.open(f"btn_bg.png").resize((300, 100))) 
         self.master.title("Battleship")
         
         # Set window to fullscreen
         self.master.attributes('-fullscreen', True)
-        
+        self.master.configure(bg=BOARD_BG)  # Set the background color to green
+
         # Create main frame
-        self.frame = tk.Frame(master)
+        self.frame = tk.Frame(master, background=BOARD_BG)
         self.frame.pack(expand=True)
         
         # Game title
         title_label = tk.Label(self.frame, 
                              text="BATTLESHIP", 
-                             font=('Arial', 48, 'bold'))
+                             font=self.war_font_48,
+                             foreground="white",
+                             background=BOARD_BG)
         title_label.pack(pady=50)
         
         # Authors
         authors_text = "22110052 - Dang Huu Loc\n22110065 - Nguyen Nhat Quang\n22110067 - Nguyen Quang Sang"
         authors_label = tk.Label(self.frame, 
                                text=authors_text,
-                               font=('Arial', 14))
+                               font=self.war_font_14,
+                               foreground="white",
+                               background=BOARD_BG)
         authors_label.pack(pady=30)
         
         # Start button
-        start_button = ttk.Button(self.frame,
+        start_button = tk.Button(self.frame,
                                 text="Start Game",
+                                image=self.btn_bg,
+                                compound="center",
                                 command=self.show_tutorial,
-                                style='Large.TButton',
-                                cursor="hand2")
+                                font=self.war_font_24,
+                                foreground="white",
+                                cursor="hand2",
+                                border=0)
         start_button.pack(pady=40)
         
-        # Configure button style
-        style = ttk.Style()
-        style.theme_use('alt')
-        style.configure('Large.TButton', 
-                       font=('Arial', 16), 
-                       padding=10,
-                       background="",
-                       foreground="white")
-        style.map("Large.TButton", background=[('!active', '#8782BC'), ("pressed", "#A5A1CD"), ("active", "#afaad2")])
         # Exit button
         exit_button = ttk.Button(self.frame,
                                text="Exit",
@@ -142,9 +146,11 @@ class HomePage:
 class TutorialPage:
     def __init__(self, master):
         self.master = master
+        self.btn_bg = ImageTk.PhotoImage(Image.open(f"btn_bg.png").resize((200, 50))) 
+        self.war_font_24 = tkFont.Font(family="Stencil", size=24, weight="bold")  # Example war-themed font
         
         # Create main frame
-        self.frame = tk.Frame(master)
+        self.frame = tk.Frame(master, background=BOARD_BG)
         self.frame.pack(expand=True, fill='both')
         
         # Load and display tutorial image
@@ -159,10 +165,14 @@ class TutorialPage:
         image_label.pack(expand=True, fill='both')
         
         # Start button
-        start_button = ttk.Button(self.frame,
+        start_button = tk.Button(self.frame,
                                 text="Start",
                                 command=self.start_game,
-                                style='Large.TButton', cursor="hand2")
+                                font=self.war_font_24,
+                                fg="white",
+                                image=self.btn_bg,
+                                compound="center",
+                                cursor="hand2")
         start_button.pack(pady=20)
 
     def start_game(self):
@@ -411,7 +421,7 @@ class BattleshipGUI:
         """
         Prompt player to enter their name for high score
         """
-        name = tk.simpledialog.askstring(
+        name = simpledialog.askstring(
             "High Score", 
             "Congratulations! Enter your name:", 
             parent=self.master
