@@ -1,8 +1,10 @@
 import tkinter as tk
 from tkinter import messagebox
-import random
+import os
+from datetime import datetime
 from typing import List, Tuple, Optional
-
+from tkinter import simpledialog
+import json
 from ai_ga import GeneticBattleshipAI
 from game import BattleshipGame
 from ship import Ship
@@ -21,6 +23,70 @@ BOARD_BTN_SIZE = 70
 BOARD_BTN_BG = "black"
 FRAME_BORDER = 10
 ACTIVE_FONT= "#00FFA6"
+class HighScoreManager:
+    def __init__(self, max_scores=10):
+        """
+        Initialize high score manager
+        :param max_scores: Maximum number of high scores to keep
+        """
+        self.high_scores_file = "battleship_high_scores.json"
+        self.max_scores = max_scores
+        self.high_scores = self.load_high_scores()
+
+    def load_high_scores(self):
+        """
+        Load high scores from file
+        :return: List of high scores
+        """
+        if not os.path.exists(self.high_scores_file):
+            return []
+        
+        try:
+            with open(self.high_scores_file, 'r') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            return []
+
+    def save_high_scores(self):
+        """
+        Save high scores to file
+        """
+        # Sort scores in descending order (lower steps is better)
+        self.high_scores.sort(key=lambda x: x['steps'])
+        
+        # Keep only top max_scores
+        self.high_scores = self.high_scores[:self.max_scores]
+        
+        try:
+            with open(self.high_scores_file, 'w') as f:
+                json.dump(self.high_scores, f, indent=2)
+        except IOError:
+            print("Could not save high scores")
+
+    def add_high_score(self, name, steps, algorithm, winner):
+        """
+        Add a new high score
+        :param name: Player name
+        :param steps: Number of steps
+        :param algorithm: Algorithm used
+        :param winner: Winner of the game
+        """
+        # Only add if player won
+        if winner != "Player":
+            return False
+        
+        # Create new score entry
+        new_score = {
+            'name': name,
+            'steps': steps,
+            'algorithm': algorithm,
+            'date': datetime.now().strftime("%Y-%m-%d")
+        }
+        
+        # Add to high scores
+        self.high_scores.append(new_score)
+        self.save_high_scores()
+        return True
 class HomePage:
     def __init__(self, master):
         self.master = master
@@ -105,7 +171,10 @@ class TutorialPage:
 
 class BattleshipGUI:
     def __init__(self, master):
-        self.btn_gb = ImageTk.PhotoImage(Image.open(f"btn_bg.png").resize((200, 50))) 
+        self.player_moves_count = 0
+        self.ai_moves_count = 0
+
+        self.btn_bg = ImageTk.PhotoImage(Image.open(f"btn_bg.png").resize((200, 50))) 
         self.war_font_24 = tkFont.Font(family="Stencil", size=24, weight="bold")  # Example war-themed font
         self.war_font_14 = tkFont.Font(family="Stencil", size=14, weight="bold")  # Example war-themed font
 
@@ -211,6 +280,143 @@ class BattleshipGUI:
 
         # Start ship placement phase
         self.start_ship_placement()
+
+        # Initialize high score manager
+        self.high_score_manager = HighScoreManager()
+    
+    def create_high_score_window(self):
+        """
+        Create a separate window to display high scores
+        """
+        # Create high score window
+        high_score_window = tk.Toplevel(self.master)
+        high_score_window.title("High Scores")
+        high_score_window.geometry("1200x400")
+        
+        # Create a frame for high scores
+        high_score_frame = tk.Frame(high_score_window)
+        high_score_frame.pack(fill='both', expand=True, padx=20, pady=20)
+        
+        # Title
+        title_label = tk.Label(high_score_frame, text="High Scores", font=('Arial', 24, 'bold'))
+        title_label.pack(pady=10)
+        
+        # Scrollbar for high scores
+        scrollbar = tk.Scrollbar(high_score_frame)
+        scrollbar.pack(side='right', fill='y')
+        
+        # Treeview to display high scores
+        columns = ('Rank', 'Name', 'Steps', 'Algorithm', 'Date')
+        high_score_tree = ttk.Treeview(
+            high_score_frame, 
+            columns=columns, 
+            show='headings', 
+            yscrollcommand=scrollbar.set
+        )
+        
+        # Configure column headings
+        for col in columns:
+            high_score_tree.heading(col, text=col)
+            high_score_tree.column(col, anchor='center', width=100)
+        
+        # Insert high scores
+        for i, score in enumerate(self.high_score_manager.high_scores, 1):
+            high_score_tree.insert('', 'end', values=(
+                i, 
+                score.get('name', 'Player'), 
+                score.get('steps', 0), 
+                score.get('algorithm', 'N/A'), 
+                score.get('date', 'N/A')
+            ))
+        
+        high_score_tree.pack(fill='both', expand=True)
+        scrollbar.config(command=high_score_tree.yview)
+
+    def update_high_score_display(self):
+        """
+        Update the high score display
+        """
+        # Clear existing high score labels
+        for widget in self.high_score_frame.winfo_children():
+            widget.destroy()
+        
+        # If no high scores, show message
+        if not self.high_score_manager.high_scores:
+            tk.Label(
+                self.high_score_frame, 
+                text="No high scores yet!", 
+                font=('Arial', 12)
+            ).pack()
+            return
+        
+        # Create headers
+        headers = tk.Frame(self.high_score_frame)
+        headers.pack(fill='x')
+        tk.Label(headers, text="Rank", font=('Arial', 10, 'bold'), width=5).pack(side='left')
+        tk.Label(headers, text="Name", font=('Arial', 10, 'bold'), width=10).pack(side='left')
+        tk.Label(headers, text="Steps", font=('Arial', 10, 'bold'), width=10).pack(side='left')
+        tk.Label(headers, text="Algorithm", font=('Arial', 10, 'bold'), width=10).pack(side='left')
+        tk.Label(headers, text="Date", font=('Arial', 10, 'bold'), width=10).pack(side='left')
+        
+        # Display high scores
+        for i, score in enumerate(self.high_score_manager.high_scores, 1):
+            score_frame = tk.Frame(self.high_score_frame)
+            score_frame.pack(fill='x')
+            
+            tk.Label(score_frame, text=str(i), width=5).pack(side='left')
+            tk.Label(score_frame, text=score.get('name', 'Player'), width=10).pack(side='left')
+            tk.Label(score_frame, text=str(score.get('steps', 0)), width=10).pack(side='left')
+            tk.Label(score_frame, text=score.get('algorithm', 'N/A'), width=10).pack(side='left')
+            tk.Label(score_frame, text=score.get('date', 'N/A'), width=10).pack(side='left')
+    
+    def save_game_history(self, winner):
+        """Save game history to a file"""
+        # Create a directory for game histories if it doesn't exist
+        history_dir = "game_histories"
+        os.makedirs(history_dir, exist_ok=True)
+        
+        # Generate unique filename with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = os.path.join(history_dir, f"game_history_{timestamp}.txt")
+        
+        # Collect game details
+        algorithm = self.algorithms.get()
+        
+        # Write game history
+        with open(filename, 'w') as f:
+            f.write(f"Battleship Game History\n")
+            f.write(f"======================\n")
+            f.write(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"Algorithm: {algorithm}\n")
+            f.write(f"Winner: {winner}\n")
+            f.write(f"Player Steps: {self.player_moves_count}\n")
+            f.write(f"AI Steps: {self.ai_moves_count}\n")
+        
+        # Show filename to user
+        messagebox.showinfo("Game Saved", f"Game history saved to:\n{filename}")
+
+        # Prompt for player name if they won
+        if winner == "Player":
+            name = self.prompt_player_name()
+            self.high_score_manager.add_high_score(
+                name, 
+                self.player_moves_count, 
+                self.algorithms.get(), 
+                winner
+            )
+            # Update high score display
+            self.update_high_score_display()
+    
+    def prompt_player_name(self):
+        """
+        Prompt player to enter their name for high score
+        """
+        name = tk.simpledialog.askstring(
+            "High Score", 
+            "Congratulations! Enter your name:", 
+            parent=self.master
+        )
+        return name if name and name.strip() else "Player"
 
     def show_grid_layout(self, frame, rows, columns):
         for r in range(rows):
@@ -389,24 +595,34 @@ class BattleshipGUI:
         # Create restart button (initially disabled)
         self.restart_button = tk.Button(self.buttons_frame,
                                     text="Restart Game",
-                                    image=self.btn_gb, 
+                                    image=self.btn_bg, 
                                     compound="center",
                                     font=self.war_font_14,
                                     fg="white",
                                     command=self.restart_game,
                                     state='disabled')
         self.restart_button.pack(side=tk.LEFT, padx=5)
-        
+
         # Create reset placement button
         self.reset_placement_button = tk.Button(self.buttons_frame,
                                             text="Reset Placement",
-                                            image=self.btn_gb,
+                                            image=self.btn_bg,
                                             font=self.war_font_14,
                                             compound="center",
                                             fg="white",
                                             command=self.reset_placement)
         self.reset_placement_button.pack(side=tk.LEFT, padx=5)
         
+        # Create high score button
+        self.high_score_button = tk.Button(self.instructions_frame,
+                                        text="High Scores", 
+                                        image=self.btn_bg,
+                                        font=self.war_font_14,
+                                        compound="center",
+                                        fg="white",
+                                        command=self.create_high_score_window)
+        self.high_score_button.pack(side=tk.BOTTOM, padx=5)
+    
         self.instruction_image = Image.open("side tutorial.png")
         self.instruction_photo = ImageTk.PhotoImage(self.instruction_image)
         # Create instructions label
@@ -415,7 +631,7 @@ class BattleshipGUI:
             image=self.instruction_photo,
         )
         self.instructions_label.pack()
-    
+        
     def start_ship_placement(self):
         """Start the ship placement phase"""
         self.setup_phase = True
@@ -580,7 +796,7 @@ class BattleshipGUI:
                 self.ai_buttons[x][y].configure(bg=BOARD_BTN_BG)
                     
     def finish_setup(self):
-        """Finish the setup phase and start the game"""
+        """Finish the setup phase and start the game"""        
         self.setup_phase = False
         self.is_player_turn = True
         # Enable AI board for attacks
@@ -640,13 +856,17 @@ class BattleshipGUI:
         # If game is in progress (not over), show confirmation dialog
         if not self.game_over and not self.setup_phase:
             if not messagebox.askyesno("Confirm Restart", "Are you sure you want to restart the game?"):
-                return        
+                return
+        self.ai_moves_count = 0
+        self.player_moves_count = 0
         # Reset AI ships frame
         for widget in self.ai_ships_frame.winfo_children():
             widget.destroy()
         for ship in self.ai_game.ships:
             label = tk.Label(self.ai_ships_frame, 
-                           text=f"{ship.name} ({ship.length}): Waiting", 
+                           text=f"{ship.name} ({ship.length}): Waiting",
+                           background=BOARD_BG,
+                           font=self.war_font_14,
                            fg="red")
             label.pack(anchor="w")
             self.ai_ship_labels[ship.name] = label
@@ -693,6 +913,8 @@ class BattleshipGUI:
         if self.ai_buttons[x][y]['state'] == 'disabled':
             return
         
+        self.player_moves_count += 1
+
         # Process player's move
         is_hit = self.ai_game.check_hit(x, y)
         self.ai_buttons[x][y]['state'] = 'disabled'
@@ -715,6 +937,7 @@ class BattleshipGUI:
         if all(ship.is_sunk() for ship in self.ai_game.ships):
             self.game_over = True
             messagebox.showinfo("Game Over", "Congratulations! You won!")
+            self.save_game_history("Player")
             return
         
         # Switch turns
@@ -773,6 +996,8 @@ class BattleshipGUI:
         x, y = self.ai.get_next_target(self.ai.best_strategy)
         is_hit = self.player_game.check_hit(x, y)
         
+        self.ai_moves_count += 1
+
         if is_hit:
             self.ai.hits.add((x, y))
             self.ai.unconfirmed_hits.add((x, y))
@@ -804,6 +1029,7 @@ class BattleshipGUI:
         if all(ship.is_sunk() for ship in self.player_game.ships):
             self.game_over = True
             messagebox.showinfo("Game Over", "AI won! Better luck next time!")
+            self.save_game_history("AI")
             return
         
         # Switch turns
@@ -819,6 +1045,8 @@ class BattleshipGUI:
         x, y = self.ai.get_next_target()
         is_hit = self.player_game.check_hit(x, y)
         
+        self.ai_moves_count += 1
+
         # Find hit ship if it's a hit
         hit_ship = None
         if is_hit:
@@ -845,6 +1073,7 @@ class BattleshipGUI:
         if all(ship.is_sunk() for ship in self.player_game.ships):
             self.game_over = True
             messagebox.showinfo("Game Over", "AI won! Better luck next time!")
+            self.save_game_history("AI")
             return
         
         # Switch turns

@@ -1,0 +1,50 @@
+[
+	{
+		"name": "Loc",
+		"steps": 28,
+		"algorithm": "Probability",
+		"date": "2024-12-04"
+	},
+	{
+		"name": "Sang",
+		"steps": 36,
+		"algorithm": "Probability",
+		"date": "2024-12-04"
+	},
+	{
+		"name": "Quang",
+		"steps": 42,
+		"algorithm": "Probability",
+		"date": "2024-12-03"
+	},
+	{
+		"name": "Sang",
+		"steps": 76,
+		"algorithm": "Probability",
+		"date": "2024-12-02"
+	},
+	{
+		"name": "Quang",
+		"steps": 54,
+		"algorithm": "Probability",
+		"date": "2024-12-04"
+	},
+	{
+		"name": "Quang",
+		"steps": 62,
+		"algorithm": "Probability",
+		"date": "2024-12-04"
+	},
+	{
+		"name": "Loc",
+		"steps": 74,
+		"algorithm": "Probability",
+		"date": "2024-11-27"
+	},
+	{
+		"name": "Sang",
+		"steps": 12,
+		"algorithm": "Probability",
+		"date": "2024-11-30"
+	}
+]
