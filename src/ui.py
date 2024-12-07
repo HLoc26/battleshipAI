@@ -14,13 +14,13 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 from tkinter import font as tkFont  # Import font module
 
-SHIP_PREVIEW_COLOR = "#e0c1e6"
-SHIP_PLACED_COLOR = "#c58ad0"
-ATTACK_MISSED = "#b0b0b0"
-ATTACK_HIT = "#ff5733"
-BOARD_BG = "#255a24"
+SHIP_PREVIEW_COLOR = "#003262"
+SHIP_PLACED_COLOR = "#003262"
+ATTACK_MISSED = "#BEBFC5"
+ATTACK_HIT = "#960018"
+BOARD_BG = "#00563B"
 BOARD_BTN_SIZE = 70
-BOARD_BTN_BG = "black"
+BOARD_BTN_BG = "#003262"
 FRAME_BORDER = 10
 ACTIVE_FONT= "#00FFA6"
 class HighScoreManager:
