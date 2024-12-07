@@ -10,11 +10,17 @@ from ai import BattleshipAI
 import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
+from tkinter import font as tkFont  # Import font module
 
 SHIP_PREVIEW_COLOR = "#e0c1e6"
 SHIP_PLACED_COLOR = "#c58ad0"
 ATTACK_MISSED = "#b0b0b0"
 ATTACK_HIT = "#ff5733"
+BOARD_BG = "#255a24"
+BOARD_BTN_SIZE = 70
+BOARD_BTN_BG = "black"
+FRAME_BORDER = 10
+ACTIVE_FONT= "#00FFA6"
 class HomePage:
     def __init__(self, master):
         self.master = master
@@ -99,9 +105,10 @@ class TutorialPage:
 
 class BattleshipGUI:
     def __init__(self, master):
+        self.btn_gb = ImageTk.PhotoImage(Image.open(f"btn_bg.png").resize((200, 50))) 
+        self.war_font_24 = tkFont.Font(family="Stencil", size=24, weight="bold")  # Example war-themed font
+        self.war_font_14 = tkFont.Font(family="Stencil", size=14, weight="bold")  # Example war-themed font
 
-        self.restart_img = ImageTk.PhotoImage(Image.open("restart.png").resize((60, 50)))
-        
         self.algorithms = tk.StringVar(value="Probability")
 
         self.master = master
@@ -115,7 +122,7 @@ class BattleshipGUI:
         master.grid_columnconfigure(0, weight=1)
         
         # Create main game frame
-        self.game_frame = tk.Frame(master, bg="lightblue")
+        self.game_frame = tk.Frame(master, bg=BOARD_BG)
         self.game_frame.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
 
         # Cấu hình grid trong `game_frame` thành layout 4x8
@@ -128,31 +135,31 @@ class BattleshipGUI:
         # self.show_grid_layout(self.game_frame, 6, 8)
 
         # "Your Board" frame
-        self.player_frame = tk.LabelFrame(self.game_frame, text="Your Board", padx=10, pady=10, font=('Arial', 15), border=0)
+        self.player_frame = tk.LabelFrame(self.game_frame, text="Your Board", padx=10, pady=10, font=self.war_font_24, border=0, background=BOARD_BG, foreground="white")
         self.player_frame.grid(row=0, column=0, rowspan=3, columnspan=3, sticky="nsew", padx=10, pady=10)
 
         # "AI's Board" frame
-        self.ai_frame = tk.LabelFrame(self.game_frame, text="AI's Board", padx=10, pady=10, font=('Arial', 15), border=0)
+        self.ai_frame = tk.LabelFrame(self.game_frame, text="Enemy's Board", padx=10, pady=10, font=self.war_font_24, border=0, background=BOARD_BG, foreground="white")
         self.ai_frame.grid(row=0, column=3, rowspan=3, columnspan=3, sticky="nsew", padx=10, pady=10)
 
         # Instructions
-        self.instructions_frame = tk.LabelFrame(self.game_frame, text="Instructions", padx=10, pady=10, font=('Arial', 15), border=0, bg="white")
+        self.instructions_frame = tk.LabelFrame(self.game_frame, text="Instructions", padx=10, pady=10, font=self.war_font_14, border=0)
         self.instructions_frame.grid(row=0, column=6, columnspan=2, rowspan=3, sticky="nsew", padx=10, pady=10)
 
         # "Your Ships" frame
-        self.player_ships_frame = tk.LabelFrame(self.game_frame, text="Your Ships", padx=10, pady=5, font=('Arial', 15), border=0)
+        self.player_ships_frame = tk.LabelFrame(self.game_frame, text="Your Ships", padx=10, pady=5, font=self.war_font_14, border=FRAME_BORDER, fg="white", bg=BOARD_BG)
         self.player_ships_frame.grid(row=3, column=0,columnspan=1, sticky="nsew", padx=10, pady=10)
 
         # Control frame
-        self.control_frame = tk.Frame(self.game_frame, padx=10, pady=10)
+        self.control_frame = tk.Frame(self.game_frame, padx=10, pady=10, bg=BOARD_BG)
         self.control_frame.grid(row=3, column=1, columnspan=4, sticky="nsew", padx=10, pady=10)
 
         # "AI Ships" frame
-        self.ai_ships_frame = tk.LabelFrame(self.game_frame, text="AI Ships", padx=10, pady=5, font=('Arial', 15), border=0)
+        self.ai_ships_frame = tk.LabelFrame(self.game_frame, text="Enemy Ships", padx=10, pady=5, font=self.war_font_14, border=FRAME_BORDER, fg="white", bg=BOARD_BG)
         self.ai_ships_frame.grid(row=3, column=5, sticky="nsew", padx=10, pady=10)
 
         # Create status label
-        self.status_label = tk.Label(self.control_frame, text="Place your ships!", font=('Arial', 15))
+        self.status_label = tk.Label(self.control_frame, text="Place your ships!", font=self.war_font_14, fg="white", bg=BOARD_BG)
         self.status_label.pack(pady=(10, 20))
 
         self.show_probability = tk.BooleanVar(value=False)
@@ -162,11 +169,13 @@ class BattleshipGUI:
             self.control_frame,
             text="Show AI Probability",
             variable=self.show_probability,
-            command=self.toggle_probability_display
+            command=self.toggle_probability_display,
+            background=BOARD_BG,
+            foreground="white"
         )
         
         # Create algorithm frame
-        self.algorithm_frame = tk.LabelFrame(self.game_frame, text="Algorithm", padx=10, pady=5, font=('Arial', 15), border=0, bg='white')
+        self.algorithm_frame = tk.LabelFrame(self.game_frame, text="Choose your enemy", padx=10, pady=5, font=self.war_font_14, border=FRAME_BORDER, bg=BOARD_BG, foreground="white")
         self.algorithm_frame.grid(row=3, column=6, sticky='nsew', padx=10, pady=10)
         
         # Tạo radio buttons
@@ -188,8 +197,8 @@ class BattleshipGUI:
 
         self.radio_style = ttk.Style()
         self.radio_style.theme_use("alt")
-        self.radio_style.configure('TRadiobutton', cursor="hand2", bg="white")
-        self.radio_style.map("TRadiobutton", background=[('!active', 'white'), ("pressed", "gray"), ("active", "lightgray")])
+        self.radio_style.configure('TRadiobutton', cursor="hand2", foreground="white", font=self.war_font_14)
+        self.radio_style.map("TRadiobutton", background=[('!active', BOARD_BG), ("pressed", "gray"), ("active", "lightgray")])
 
         # Create ship status frames
         self.create_ship_status_frames()
@@ -250,6 +259,62 @@ class BattleshipGUI:
         self.placement_preview = set()  # Store cells being previewed
     
     def create_board_frames(self):
+        # Load water image
+        self.water_img = ImageTk.PhotoImage(Image.open("water.png").resize((BOARD_BTN_SIZE, BOARD_BTN_SIZE)))
+
+        # Load ship part images for different lengths and orientations
+        self.ship_images = {
+            "Carrier": {
+                'horizontal': [
+                    ImageTk.PhotoImage(Image.open(f"ship_5_horizontal_part{i}.png").resize((BOARD_BTN_SIZE, BOARD_BTN_SIZE))) 
+                    for i in range(5)
+                ],
+                'vertical': [
+                    ImageTk.PhotoImage(Image.open(f"ship_5_vertical_part{i}.png").resize((BOARD_BTN_SIZE, BOARD_BTN_SIZE))) 
+                    for i in range(5)
+                ]
+            },
+            "Battleship": {
+                'horizontal': [
+                    ImageTk.PhotoImage(Image.open(f"ship_4_horizontal_part{i}.png").resize((BOARD_BTN_SIZE, BOARD_BTN_SIZE))) 
+                    for i in range(4)
+                ],
+                'vertical': [
+                    ImageTk.PhotoImage(Image.open(f"ship_4_vertical_part{i}.png").resize((BOARD_BTN_SIZE, BOARD_BTN_SIZE))) 
+                    for i in range(4)
+                ]
+            },
+            "Cruiser": {
+                'horizontal': [
+                    ImageTk.PhotoImage(Image.open(f"ship_3_horizontal_part{i}.png").resize((BOARD_BTN_SIZE, BOARD_BTN_SIZE))) 
+                    for i in range(3)
+                ],
+                'vertical': [
+                    ImageTk.PhotoImage(Image.open(f"ship_3_vertical_part{i}.png").resize((BOARD_BTN_SIZE, BOARD_BTN_SIZE))) 
+                    for i in range(3)
+                ]
+            },
+            "Submarine": {
+                'horizontal': [
+                    ImageTk.PhotoImage(Image.open(f"ship_3_2_horizontal_part{i}.png").resize((BOARD_BTN_SIZE, BOARD_BTN_SIZE))) 
+                    for i in range(3)
+                ],
+                'vertical': [
+                    ImageTk.PhotoImage(Image.open(f"ship_3_2_vertical_part{i}.png").resize((BOARD_BTN_SIZE, BOARD_BTN_SIZE))) 
+                    for i in range(3)
+                ]
+            },
+            "Destroyer": {
+                'horizontal': [
+                    ImageTk.PhotoImage(Image.open(f"ship_2_horizontal_part{i}.png").resize((BOARD_BTN_SIZE, BOARD_BTN_SIZE))) 
+                    for i in range(2)
+                ],
+                'vertical': [
+                    ImageTk.PhotoImage(Image.open(f"ship_2_vertical_part{i}.png").resize((BOARD_BTN_SIZE, BOARD_BTN_SIZE))) 
+                    for i in range(2)
+                ]
+            }
+        }
         # Create board buttons
         self.player_buttons = []
         self.ai_buttons = []
@@ -259,7 +324,7 @@ class BattleshipGUI:
             ai_row = []
             for j in range(10):
                 # Player's board buttons - increased width for probability numbers
-                p_btn = tk.Button(self.player_frame, width=8, height=3, cursor='hand2')
+                p_btn = tk.Button(self.player_frame, width=BOARD_BTN_SIZE, height=BOARD_BTN_SIZE, image=self.water_img, cursor='hand2', background=BOARD_BTN_BG)
                 p_btn.grid(row=i+1, column=j+1)
                 p_btn.bind('<Enter>', lambda e, x=i, y=j: self.preview_ship_placement(x, y))
                 p_btn.bind('<Leave>', lambda e: self.clear_ship_preview())
@@ -268,7 +333,7 @@ class BattleshipGUI:
                 player_row.append(p_btn)
                 
                 # AI's board buttons
-                ai_btn = tk.Button(self.ai_frame, width=8, height=3)
+                ai_btn = tk.Button(self.ai_frame, width=BOARD_BTN_SIZE, height=BOARD_BTN_SIZE, image=self.water_img, background=BOARD_BTN_BG)
                 ai_btn.grid(row=i+1, column=j+1)
                 ai_btn.configure(state='disabled')  # Disabled during setup
                 ai_row.append(ai_btn)
@@ -281,29 +346,16 @@ class BattleshipGUI:
             self.player_frame.grid_columnconfigure(i + 1, weight=1)
             self.ai_frame.grid_rowconfigure(i + 1, weight=1)
             self.ai_frame.grid_columnconfigure(i + 1, weight=1)
-        # Add row/column labels
+
+        # Add row/column labels with custom font
         for i in range(10):
             # Row labels
-            tk.Label(self.player_frame, text=str(i)).grid(row=i+1, column=0)
-            tk.Label(self.ai_frame, text=str(i)).grid(row=i+1, column=0)
+            tk.Label(self.player_frame, text=str(i), font=self.war_font_24, bg=BOARD_BG, fg="white").grid(row=i+1, column=0)
+            tk.Label(self.ai_frame, text=str(i), font=self.war_font_24, bg=BOARD_BG, fg="white").grid(row=i+1, column=0)
             
             # Column labels
-            tk.Label(self.player_frame, text=str(i)).grid(row=0, column=i+1)
-            tk.Label(self.ai_frame, text=str(i)).grid(row=0, column=i+1)
-    def resize_buttons(self, event):
-        # Calculate new dimensions based on window size
-        new_width = max(5, event.width // 20) 
-        new_height = max(2, event.height // 40)
-
-        # Update all player buttons
-        for row in self.player_buttons:
-            for button in row:
-                button.config(width=new_width, height=new_height)
-
-        # Update all AI buttons
-        for row in self.ai_buttons:
-            for button in row:
-                button.config(width=new_width, height=new_height)
+            tk.Label(self.player_frame, text=str(i), font=self.war_font_24,bg=BOARD_BG, fg="white").grid(row=0, column=i+1)
+            tk.Label(self.ai_frame, text=str(i), font=self.war_font_24,bg=BOARD_BG, fg="white").grid(row=0, column=i+1)
                 
     def create_ship_status_frames(self): 
         # Add ship status labels
@@ -313,7 +365,9 @@ class BattleshipGUI:
         for ship_name, length in self.ships_to_place:
             label = tk.Label(self.player_ships_frame, 
                            text=f"{ship_name} ({length}): Not Placed", 
-                           fg="orange")
+                           fg="orange",
+                           bg=BOARD_BG,
+                           font=self.war_font_14)
             label.pack(anchor="w")
             self.player_ship_labels[ship_name] = label
 
@@ -321,25 +375,35 @@ class BattleshipGUI:
         for ship in self.ai_game.ships:
             label = tk.Label(self.ai_ships_frame, 
                            text=f"{ship.name} ({ship.length}): Waiting", 
-                           fg="red")
+                           fg="red",
+                           font=self.war_font_14,
+                           bg=BOARD_BG)
             label.pack(anchor="w")
             self.ai_ship_labels[ship.name] = label
     
     def create_control_buttons(self):
         # Create a new frame for buttons
-        self.buttons_frame = tk.Frame(self.control_frame)
+        self.buttons_frame = tk.Frame(self.control_frame, background=BOARD_BG)
         self.buttons_frame.pack()
         
         # Create restart button (initially disabled)
         self.restart_button = tk.Button(self.buttons_frame,
-                                    image=self.restart_img, 
+                                    text="Restart Game",
+                                    image=self.btn_gb, 
+                                    compound="center",
+                                    font=self.war_font_14,
+                                    fg="white",
                                     command=self.restart_game,
                                     state='disabled')
         self.restart_button.pack(side=tk.LEFT, padx=5)
         
         # Create reset placement button
         self.reset_placement_button = tk.Button(self.buttons_frame,
-                                            text="Reset Placement", 
+                                            text="Reset Placement",
+                                            image=self.btn_gb,
+                                            font=self.war_font_14,
+                                            compound="center",
+                                            fg="white",
                                             command=self.reset_placement)
         self.reset_placement_button.pack(side=tk.LEFT, padx=5)
         
@@ -370,7 +434,8 @@ class BattleshipGUI:
         self.is_horizontal = not self.is_horizontal
         self.status_label.configure(
             text=f"Placing {self.ships_to_place[self.current_ship_index][0]} "
-                 f"({'Horizontal' if self.is_horizontal else 'Vertical'})"
+                 f"({'Horizontal' if self.is_horizontal else 'Vertical'})\n"
+                 f"Right-click to rotate"
         )
         self.clear_ship_preview()
         self.preview_ship_placement(x, y)
@@ -388,16 +453,28 @@ class BattleshipGUI:
         if not positions:  # Invalid placement
             return
         
-        # Show preview
+        # Show preview with ship images
         self.placement_preview = set(positions)
-        for px, py in positions:
-            self.player_buttons[px][py].configure(bg=SHIP_PREVIEW_COLOR)
-    
+        
+        orientation = 'horizontal' if self.is_horizontal else 'vertical'
+        ship_parts = self.ship_images[ship_name][orientation]
+        
+        for i, (px, py) in enumerate(positions):
+            if 0 <= px < 10 and 0 <= py < 10:  # Ensure the position is within bounds
+                self.player_buttons[px][py].configure(
+                    image=ship_parts[i],  # Assign corresponding part of the ship
+                    bg=SHIP_PREVIEW_COLOR
+                )
+
+            
     def clear_ship_preview(self):
         """Clear the ship placement preview"""
         for x, y in self.placement_preview:
             if self.player_game.board[x][y] == ' ':
-                self.player_buttons[x][y].configure(bg="SystemButtonFace")
+                self.player_buttons[x][y].configure(
+                    image=self.water_img,  # Reset to water image
+                    bg=BOARD_BTN_BG
+                )
         self.placement_preview.clear()
     
     def get_ship_positions(self, x: int, y: int, length: int) -> List[Tuple[int, int]]:
@@ -444,14 +521,22 @@ class BattleshipGUI:
         ship.positions = positions
         self.player_game.ships.append(ship)
         
-        for px, py in positions:
+        # Choose the right images based on orientation
+        orientation = 'horizontal' if self.is_horizontal else 'vertical'
+        ship_parts = self.ship_images[ship_name][orientation]
+        
+        # Place the ship parts
+        for i, (px, py) in enumerate(positions):
             self.player_game.board[px][py] = ship_name[0]
-            self.player_buttons[px][py].configure(bg=SHIP_PLACED_COLOR)
+            self.player_buttons[px][py].configure(
+                image=ship_parts[i],
+                bg=SHIP_PLACED_COLOR
+            )
         
         # Update ship status
         self.player_ship_labels[ship_name].configure(
             text=f"{ship_name} ({ship_length}): Active",
-            fg="green"
+            fg=ACTIVE_FONT
         )
         
         # Move to next ship
@@ -460,7 +545,7 @@ class BattleshipGUI:
             self.finish_setup()
         else:
             self.update_placement_status()
-    
+
     def update_placement_status(self):
         """Update status label during ship placement"""
         if self.current_ship_index < len(self.ships_to_place):
@@ -468,13 +553,14 @@ class BattleshipGUI:
             self.status_label.configure(
                 text=f"Place your {ship_name} "
                      f"({'Horizontal' if self.is_horizontal else 'Vertical'})\n"
-                     "Right-click to rotate"
+                     "Right-click to rotate",
+                font=self.war_font_14
             )
     
     def handle_ai_board_btn_enter(self, x, y):
         bg = self.ai_buttons[x][y].cget('bg')
-        if bg == 'SystemButtonFace':
-            self.ai_buttons[x][y].configure(bg='gray')
+        if bg == BOARD_BTN_BG:
+            self.ai_buttons[x][y].configure(bg='SystemButtonFace')
 
     def handle_ai_board_btn_leave(self, x, y):
         # Check if this position was hit on any ship
@@ -488,10 +574,10 @@ class BattleshipGUI:
         # If it's not a hit but the background isn't default, it must be a miss
         if not is_hit:
             bg = self.ai_buttons[x][y].cget('bg')
-            if bg != 'SystemButtonFace' and bg != 'gray':
+            if bg != 'SystemButtonFace' and bg != BOARD_BTN_BG:
                 self.ai_buttons[x][y].configure(bg=ATTACK_MISSED)
             else:
-                self.ai_buttons[x][y].configure(bg='SystemButtonFace')
+                self.ai_buttons[x][y].configure(bg=BOARD_BTN_BG)
                     
     def finish_setup(self):
         """Finish the setup phase and start the game"""
@@ -513,7 +599,9 @@ class BattleshipGUI:
         for ship in self.ai_game.ships:
             label = tk.Label(self.ai_ships_frame, 
                            text=f"{ship.name} ({ship.length}): Active", 
-                           fg="green")
+                           fg=ACTIVE_FONT,
+                           font=self.war_font_14,
+                           bg=BOARD_BG)
             label.pack(anchor="w")
             self.ai_ship_labels[ship.name] = label
         
@@ -522,7 +610,8 @@ class BattleshipGUI:
         self.reset_placement_button.configure(state='disabled')
         # Enable restart button when game starts
         self.restart_button.configure(state='normal')
-        self.prob_checkbox.pack(pady=10)
+        if self.algorithms.get() == "Probability":
+            self.prob_checkbox.pack(pady=10)
     
     def reset_placement(self):
         """Reset the ship placement phase"""
@@ -533,7 +622,7 @@ class BattleshipGUI:
         # Reset buttons
         for i in range(10):
             for j in range(10):
-                self.player_buttons[i][j].configure(bg="SystemButtonFace")
+                self.player_buttons[i][j].configure(bg=BOARD_BTN_BG, image=self.water_img)
         
         # Reset ship labels
         for ship_name, length in self.ships_to_place:
@@ -569,12 +658,14 @@ class BattleshipGUI:
         for i in range(10):
             for j in range(10):
                 self.player_buttons[i][j].configure(
-                    bg="SystemButtonFace",
-                    state='normal'
+                    bg=BOARD_BTN_BG,
+                    state='normal',
+                    image=self.water_img
                 )
                 self.ai_buttons[i][j].configure(
-                    bg="SystemButtonFace",
-                    state='disabled'
+                    bg=BOARD_BTN_BG,
+                    state='disabled',
+                    image=self.water_img
                 )
         
         # Reset ship labels
@@ -674,7 +765,7 @@ class BattleshipGUI:
                         text = f"{prob:.2f}"
                 
                 # Update button text
-                self.player_buttons[i][j].configure(text=text)
+                self.player_buttons[i][j].configure(text=text, fg="white", compound="center", font=('Arial', 10))
 
     def handle_ga_move(self):
         if self.game_over:
