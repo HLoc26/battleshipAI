@@ -1,0 +1,7 @@
+Battleship Game History
+======================
+Date: 2024-12-07 18:06:20
+Algorithm: Probability
+Winner: AI
+Player Steps: 28
+AI Steps: 28
