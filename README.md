@@ -37,7 +37,7 @@ cd src
 
 2. Run the game:
 ```bash
-python battleship.py
+python ui.py
 ```
 
 3. Follow the on-screen instructions to place your ships and play against the AI.
