@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Sang",
+    "steps": 12,
+    "algorithm": "Probability",
+    "date": "2024-11-30"
+  },
+  {
+    "name": "Loc",
+    "steps": 28,
+    "algorithm": "Probability",
+    "date": "2024-12-04"
+  },
+  {
+    "name": "Sang",
+    "steps": 36,
+    "algorithm": "Probability",
+    "date": "2024-12-04"
+  },
+  {
+    "name": "Quang",
+    "steps": 42,
+    "algorithm": "Probability",
+    "date": "2024-12-03"
+  },
+  {
+    "name": "Quang",
+    "steps": 54,
+    "algorithm": "Probability",
+    "date": "2024-12-04"
+  },
+  {
+    "name": "Nhat Quang - Demo",
+    "steps": 55,
+    "algorithm": "Probability",
+    "date": "2024-12-07"
+  },
+  {
+    "name": "Nhat Quang - winner in demo",
+    "steps": 58,
+    "algorithm": "Probability",
+    "date": "2024-12-07"
+  },
+  {
+    "name": "Quang",
+    "steps": 62,
+    "algorithm": "Probability",
+    "date": "2024-12-04"
+  },
+  {
+    "name": "Loc",
+    "steps": 74,
+    "algorithm": "Probability",
+    "date": "2024-11-27"
+  },
+  {
+    "name": "Sang",
+    "steps": 76,
+    "algorithm": "Probability",
+    "date": "2024-12-02"
+  }
+]
